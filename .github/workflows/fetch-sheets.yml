@@ -24,7 +24,8 @@ jobs:
     
     - name: Create service account credentials
       run: |
-        echo "${{ secrets.GOOGLE_SERVICE_ACCOUNT }}" > service_account.json
+        echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT }}' > service_account.json
+      shell: bash
     
     - name: Fetch and convert data
       run: python scripts/fetch_sheets.py
