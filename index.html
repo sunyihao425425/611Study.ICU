@@ -165,27 +165,65 @@
                     display: block;
                 }
                 table thead {
-                    display: none; /* 隐藏原始表头 */
+                    display: none;
                 }
                 table tbody {
                     display: block;
                 }
                 table tr {
-                    display: block;
+                    display: grid;
+                    grid-template-columns: 1fr;
+                    gap: 0;
                     margin-bottom: 15px;
                     background: white;
                     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
                     border-radius: 8px;
                 }
                 table td {
-                    display: block;
-                    padding: 10px 15px;
+                    display: none; /* 默认隐藏所有单元格 */
+                    padding: 8px 15px;
                     font-size: 14px;
                     border: none;
                     border-bottom: 1px solid #eee;
                 }
-                table td:last-child {
-                    border-bottom: none;
+                /* 只显示重要信息 */
+                table td[data-label="时间戳记"],
+                table td[data-label="省份"],
+                table td[data-label="城市"],
+                table td[data-label="学校名称"],
+                table td[data-label="每周在校学习小时数"],
+                table td[data-label="24年学生自杀数"] {
+                    display: block;
+                }
+                /* 展开/收起按钮 */
+                table tr {
+                    position: relative;
+                }
+                .expand-btn {
+                    position: absolute;
+                    right: 10px;
+                    top: 10px;
+                    background: #f0f0f0;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 4px 8px;
+                    font-size: 12px;
+                    cursor: pointer;
+                    z-index: 1;
+                }
+                .expanded td {
+                    display: block !important;
+                }
+                /* 优化关键信息显示 */
+                table td[data-label="时间戳记"] {
+                    font-weight: bold;
+                    background: #f8f9fa;
+                    color: var(--primary-color);
+                    padding-right: 60px; /* 为展开按钮留出空间 */
+                }
+                table td[data-label="每周在校学习小时数"],
+                table td[data-label="24年学生自杀数"] {
+                    color: var(--danger-color);
                 }
                 /* 为每个单元格添加标签 */
                 table td:before {
@@ -195,16 +233,6 @@
                     color: #666;
                     font-size: 12px;
                     margin-bottom: 4px;
-                }
-                /* 优化关键信息显示 */
-                table td[data-label="学校名称"] {
-                    font-size: 16px;
-                    font-weight: bold;
-                    background: #f8f9fa;
-                }
-                table td[data-label="每周在校学习小时数"],
-                table td[data-label="24年学生自杀数"] {
-                    color: var(--danger-color);
                 }
             }
             /* 添加表格排序样式 */
@@ -228,11 +256,11 @@
     </head>
     <body>
         <div class="container">
-            <div class="last-updated">最后更新时间：2025-02-04 12:41:59 (UTC+8)</div>
+            <div class="last-updated">最后更新时间：2025-02-04 12:50:54 (UTC+8)</div>
             <div class="timezone-notice">注意！本站时间与原表格一致，<u>仅最后更新时间</u>为北京时间。</div>
             
-            <div class="stats-container" id="statsContainer">
-                <!-- 统计卡片将通过JavaScript动态添加 -->
+            <div class="stats-container" id="totalStatsContainer">
+                <!-- 总体统计数据将在这里显示 -->
             </div>
             
             <div class="controls">
@@ -240,6 +268,10 @@
                 <div class="filter-container" id="filterContainer">
                     <!-- 筛选下拉框将通过JavaScript动态添加 -->
                 </div>
+            </div>
+
+            <div class="stats-container" id="filteredStatsContainer">
+                <!-- 筛选后的统计数据将在这里显示 -->
             </div>
 
             <div class="table-responsive">
@@ -10040,6 +10072,54 @@
       <td>0</td>
       <td></td>
     </tr>
+    <tr>
+      <td>2025-2-4 下午03:48:09</td>
+      <td>陕西</td>
+      <td>咸阳市</td>
+      <td>秦都区</td>
+      <td>咸阳市育才田家炳中学</td>
+      <td>12</td>
+      <td>76</td>
+      <td>4</td>
+      <td>10</td>
+      <td>1</td>
+      <td>上午07:20:00</td>
+      <td>下午09:40:00</td>
+      <td>800</td>
+      <td>傻逼校领导为了升学率和政绩剥削师生假期</td>
+    </tr>
+    <tr>
+      <td>2025-2-4 下午03:48:15</td>
+      <td>广东</td>
+      <td>东莞市</td>
+      <td>东城街道</td>
+      <td>东莞市东城中学</td>
+      <td>9</td>
+      <td>75</td>
+      <td>12</td>
+      <td>22</td>
+      <td>2</td>
+      <td>上午07:22:00</td>
+      <td>上午05:09:00</td>
+      <td>0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>2025-2-4 下午03:50:32</td>
+      <td>四川</td>
+      <td>南充</td>
+      <td>四川省南充市南部县</td>
+      <td>四川省南部中学</td>
+      <td>12</td>
+      <td>105</td>
+      <td>1</td>
+      <td>5</td>
+      <td>10</td>
+      <td>上午06:30:00</td>
+      <td>上午11:30:00</td>
+      <td>0</td>
+      <td></td>
+    </tr>
   </tbody>
 </table>
             </div>
@@ -10050,32 +10130,18 @@
                 const table = document.querySelector('table');
                 const searchInput = document.getElementById('searchInput');
                 const filterContainer = document.getElementById('filterContainer');
-                const statsContainer = document.getElementById('statsContainer');
+                const totalStatsContainer = document.getElementById('totalStatsContainer');
+                const filteredStatsContainer = document.getElementById('filteredStatsContainer');
+                
+                // 存储所有选项的原始数据
+                const originalOptions = {};
                 
                 // 创建统计数据
-                function updateStats() {
-                    const visibleRows = Array.from(table.querySelectorAll('tr:not(.hidden)')).slice(1);
-                    const stats = {
-                        totalSchools: visibleRows.length,
-                        avgHours: Math.round(visibleRows.reduce((sum, row) => {
-                            const hours = parseFloat(row.cells[6].textContent || '0');
-                            return isNaN(hours) ? sum : sum + hours;
-                        }, 0) / visibleRows.length || 0),
-                        totalSuicides: visibleRows.reduce((sum, row) => {
-                            const suicides = row.cells[9].textContent.trim();
-                            const num = parseInt(suicides);
-                            return isNaN(num) ? sum : sum + num;
-                        }, 0),
-                        earlyStart: visibleRows.filter(row => {
-                            const startTime = row.cells[10].textContent;
-                            return startTime && (startTime.includes('05:') || startTime.includes('06:'));
-                        }).length
-                    };
-
-                    statsContainer.innerHTML = `
+                function createStatsHtml(stats, filtered = false) {
+                    return `
                         <div class="stat-card">
                             <div class="stat-value">${stats.totalSchools}</div>
-                            <div class="stat-label">符合条件的学校数量</div>
+                            <div class="stat-label">${filtered ? '符合条件' : '总'}学校数量</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-value">${stats.avgHours}</div>
@@ -10092,65 +10158,50 @@
                     `;
                 }
 
-                // 为移动端添加数据标签
-                function addMobileDataLabels() {
-                    const rows = Array.from(table.querySelectorAll('tr'));
-                    const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent);
-                    
-                    rows.slice(1).forEach(row => {
-                        Array.from(row.cells).forEach((cell, index) => {
-                            cell.setAttribute('data-label', headers[index]);
-                        });
-                    });
+                function calculateStats(rows) {
+                    return {
+                        totalSchools: rows.length,
+                        avgHours: Math.round(rows.reduce((sum, row) => {
+                            const hours = parseFloat(row.cells[6].textContent || '0');
+                            return isNaN(hours) ? sum : sum + hours;
+                        }, 0) / rows.length || 0),
+                        totalSuicides: rows.reduce((sum, row) => {
+                            const suicides = row.cells[9].textContent.trim();
+                            const num = parseInt(suicides);
+                            return isNaN(num) ? sum : sum + num;
+                        }, 0),
+                        earlyStart: rows.filter(row => {
+                            const startTime = row.cells[10].textContent;
+                            return startTime && (startTime.includes('05:') || startTime.includes('06:'));
+                        }).length
+                    };
                 }
 
-                // 添加表格排序功能
-                function initTableSort() {
-                    const headers = Array.from(table.querySelectorAll('th'));
-                    headers.forEach((header, index) => {
-                        if (['每周在校学习小时数', '每月假期天数', '寒假放假天数', '24年学生自杀数'].includes(header.textContent)) {
-                            header.classList.add('sortable');
-                            header.addEventListener('click', () => sortTable(index, header));
-                        }
-                    });
+                // 初始化总体统计
+                function initTotalStats() {
+                    const allRows = Array.from(table.querySelectorAll('tr')).slice(1);
+                    const totalStats = calculateStats(allRows);
+                    totalStatsContainer.innerHTML = createStatsHtml(totalStats, false);
                 }
 
-                function sortTable(columnIndex, header) {
-                    const tbody = table.querySelector('tbody');
-                    const rows = Array.from(tbody.querySelectorAll('tr'));
-                    const isAsc = !header.classList.contains('asc');
-                    
-                    // 清除所有排序标记
-                    table.querySelectorAll('.sortable').forEach(h => {
-                        h.classList.remove('asc', 'desc');
-                    });
-                    
-                    // 添加新的排序标记
-                    header.classList.add(isAsc ? 'asc' : 'desc');
-                    
-                    const sortedRows = rows.sort((a, b) => {
-                        const aValue = parseFloat(a.cells[columnIndex].textContent) || 0;
-                        const bValue = parseFloat(b.cells[columnIndex].textContent) || 0;
-                        return isAsc ? aValue - bValue : bValue - aValue;
-                    });
-                    
-                    // 重新插入排序后的行
-                    tbody.innerHTML = '';
-                    sortedRows.forEach(row => tbody.appendChild(row));
-                    
-                    // 更新统计数据
-                    updateStats();
+                // 更新筛选后的统计
+                function updateFilteredStats() {
+                    const visibleRows = Array.from(table.querySelectorAll('tr:not(.hidden)')).slice(1);
+                    const filteredStats = calculateStats(visibleRows);
+                    filteredStatsContainer.innerHTML = createStatsHtml(filteredStats, true);
                 }
 
                 // 创建筛选器组
                 const headers = Array.from(table.querySelectorAll('th'));
                 headers.forEach((header, index) => {
-                    const values = new Set();
-                    Array.from(table.querySelectorAll(`td:nth-child(${index + 1})`))
-                        .forEach(cell => values.add(cell.textContent.trim()));
-
-                    // 只为有意义的列创建筛选器
                     if (['省份', '城市', '区县', '年级'].includes(header.textContent)) {
+                        const values = new Set();
+                        Array.from(table.querySelectorAll(`td:nth-child(${index + 1})`))
+                            .forEach(cell => values.add(cell.textContent.trim()));
+                        
+                        // 存储原始选项
+                        originalOptions[header.textContent] = Array.from(values).sort();
+
                         const filterGroup = document.createElement('div');
                         filterGroup.className = 'filter-group';
                         
@@ -10158,15 +10209,14 @@
                         select.className = 'filter-select';
                         select.innerHTML = `
                             <option value="">筛选${header.textContent}</option>
-                            ${Array.from(values).sort().map(value => 
+                            ${originalOptions[header.textContent].map(value => 
                                 `<option value="${value}">${value}</option>`
                             ).join('')}
                         `;
                         
                         select.addEventListener('change', () => {
                             applyFilters();
-                            // 连锁效应：更新其他筛选器的可选项
-                            updateFilterOptions(index);
+                            updateFilterOptions();
                         });
                         
                         filterGroup.appendChild(select);
@@ -10174,39 +10224,69 @@
                     }
                 });
 
-                // 更新筛选器选项（连锁效应）
-                function updateFilterOptions(changedIndex) {
+                // 更新筛选器选项
+                function updateFilterOptions() {
                     const filters = Array.from(document.querySelectorAll('.filter-select'));
                     const activeFilters = filters.map(select => ({
-                        index: headers.findIndex(h => h.textContent === select.options[0].textContent.replace('筛选', '')),
+                        name: select.options[0].textContent.replace('筛选', ''),
                         value: select.value.toLowerCase()
                     }));
 
-                    // 获取当前可见的行
-                    const visibleRows = Array.from(table.querySelectorAll('tr:not(.hidden)')).slice(1);
+                    // 获取符合当前筛选条件的行
+                    const visibleRows = Array.from(table.querySelectorAll('tr')).slice(1)
+                        .filter(row => {
+                            const cells = Array.from(row.cells);
+                            return activeFilters.every(filter => {
+                                if (!filter.value) return true;
+                                const cellIndex = headers.findIndex(h => h.textContent === filter.name);
+                                return cells[cellIndex].textContent.toLowerCase() === filter.value;
+                            });
+                        });
 
-                    filters.forEach((select, filterIndex) => {
-                        if (filterIndex === changedIndex) return; // 跳过触发变化的筛选器
-
-                        const columnIndex = headers.findIndex(h => 
-                            h.textContent === select.options[0].textContent.replace('筛选', ''));
+                    // 更新每个筛选器的选项
+                    filters.forEach(select => {
+                        const filterName = select.options[0].textContent.replace('筛选', '');
+                        const currentValue = select.value;
+                        const cellIndex = headers.findIndex(h => h.textContent === filterName);
                         
+                        // 如果当前筛选器有值，使用原始选项
+                        if (currentValue) {
+                            select.innerHTML = `
+                                <option value="">筛选${filterName}</option>
+                                ${originalOptions[filterName].map(value => 
+                                    `<option value="${value}" ${value === currentValue ? 'selected' : ''}>${value}</option>`
+                                ).join('')}
+                            `;
+                            return;
+                        }
+
                         // 收集可用的选项
                         const availableValues = new Set();
                         visibleRows.forEach(row => {
-                            availableValues.add(row.cells[columnIndex].textContent.trim());
+                            availableValues.add(row.cells[cellIndex].textContent.trim());
                         });
 
-                        // 保存当前选中的值
-                        const currentValue = select.value;
-                        
-                        // 更新选项
                         select.innerHTML = `
-                            <option value="">筛选${headers[columnIndex].textContent}</option>
+                            <option value="">筛选${filterName}</option>
                             ${Array.from(availableValues).sort().map(value => 
-                                `<option value="${value}" ${value === currentValue ? 'selected' : ''}>${value}</option>`
+                                `<option value="${value}">${value}</option>`
                             ).join('')}
                         `;
+                    });
+                }
+
+                // 为移动端添加展开/收起功能
+                function addExpandButtons() {
+                    const rows = Array.from(table.querySelectorAll('tr')).slice(1);
+                    rows.forEach(row => {
+                        const expandBtn = document.createElement('button');
+                        expandBtn.className = 'expand-btn';
+                        expandBtn.textContent = '展开';
+                        expandBtn.onclick = function() {
+                            const isExpanded = row.classList.toggle('expanded');
+                            this.textContent = isExpanded ? '收起' : '展开';
+                        };
+                        row.appendChild(expandBtn);
                     });
                 }
 
@@ -10221,12 +10301,10 @@
 
                     const rows = Array.from(table.querySelectorAll('tr'));
                     
-                    // 跳过表头行
                     rows.slice(1).forEach(row => {
                         const cells = Array.from(row.querySelectorAll('td'));
                         const rowText = cells.map(cell => cell.textContent.toLowerCase()).join(' ');
                         
-                        // 检查是否匹配搜索词和所有激活的筛选器
                         const matchesSearch = searchTerm === '' || rowText.includes(searchTerm);
                         const matchesFilters = filterValues.every(filter => 
                             filter.value === '' || 
@@ -10235,7 +10313,6 @@
 
                         if (matchesSearch && matchesFilters) {
                             row.classList.remove('hidden');
-                            // 高亮搜索词
                             if (searchTerm) {
                                 cells.forEach(cell => {
                                     const text = cell.textContent;
@@ -10254,16 +10331,20 @@
                         }
                     });
 
-                    // 更新统计数据
-                    updateStats();
+                    updateFilteredStats();
                 }
 
-                // 监听搜索输入
-                searchInput.addEventListener('input', applyFilters);
-
                 // 初始化
+                initTotalStats();
+                addExpandButtons();
                 addMobileDataLabels();
                 initTableSort();
+
+                // 监听搜索输入
+                searchInput.addEventListener('input', () => {
+                    applyFilters();
+                    updateFilterOptions();
+                });
             });
         </script>
     </body>
