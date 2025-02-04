@@ -290,7 +290,7 @@
     </head>
     <body>
         <div class="container">
-            <div class="last-updated">最后更新时间：2025-02-04 13:11:56 (UTC+8)</div>
+            <div class="last-updated">最后更新时间：2025-02-04 13:16:57 (UTC+8)</div>
             <div class="timezone-notice">注意！本站时间与原表格一致，<u>仅最后更新时间</u>为北京时间。</div>
             
             <div class="stats-container" id="totalStatsContainer">
@@ -10403,6 +10403,141 @@
                     currentSearchTerm = e.target.value;
                     applyFiltersAndSearch();
                 });
+
+                // 创建统计数据
+                function createStatsHtml(stats, filtered = false) {
+                    return `
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.totalSchools}</div>
+                            <div class="stat-label">${filtered ? '符合条件' : '总'}学校数量</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.avgHours}</div>
+                            <div class="stat-label">平均每周在校学习小时数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.totalSuicides || 0}</div>
+                            <div class="stat-label">总自杀人数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.earlyStart}</div>
+                            <div class="stat-label">早于7点上学的学校数</div>
+                        </div>
+                    `;
+                }
+
+                function calculateStats(rows) {
+                    return {
+                        totalSchools: rows.length,
+                        avgHours: Math.round(rows.reduce((sum, row) => {
+                            const hours = parseFloat(row.cells[6].textContent || '0');
+                            return isNaN(hours) ? sum : sum + hours;
+                        }, 0) / rows.length || 0),
+                        totalSuicides: rows.reduce((sum, row) => {
+                            const suicides = row.cells[9].textContent.trim();
+                            const num = parseInt(suicides);
+                            return isNaN(num) ? sum : sum + num;
+                        }, 0),
+                        earlyStart: rows.filter(row => {
+                            const startTime = row.cells[10].textContent;
+                            return startTime && (startTime.includes('05:') || startTime.includes('06:'));
+                        }).length
+                    };
+                }
+
+                // 初始化总体统计
+                function initTotalStats() {
+                    const totalStats = calculateStats(originalRows);
+                    totalStatsContainer.innerHTML = createStatsHtml(totalStats, false);
+                }
+
+                // 更新筛选后的统计
+                function updateFilteredStats() {
+                    const visibleRows = Array.from(table.querySelectorAll('tr:not(.hidden)')).slice(1);
+                    const filteredStats = calculateStats(visibleRows);
+                    filteredStatsContainer.innerHTML = createStatsHtml(filteredStats, true);
+                }
+
+                // 为移动端添加数据标签
+                function addMobileDataLabels() {
+                    const rows = Array.from(table.querySelectorAll('tr'));
+                    const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent);
+                    
+                    rows.slice(1).forEach(row => {
+                        Array.from(row.cells).forEach((cell, index) => {
+                            cell.setAttribute('data-label', headers[index]);
+                        });
+                    });
+                }
+
+                // 为移动端添加展开/收起功能
+                function addExpandButtons() {
+                    const rows = Array.from(table.querySelectorAll('tr')).slice(1);
+                    rows.forEach(row => {
+                        // 创建展开按钮
+                        const expandBtn = document.createElement('button');
+                        expandBtn.className = 'expand-btn';
+                        expandBtn.textContent = '展开详情';
+                        expandBtn.onclick = function(e) {
+                            e.stopPropagation();
+                            const isExpanded = row.classList.toggle('expanded');
+                            this.textContent = isExpanded ? '收起' : '展开详情';
+                        };
+                        
+                        // 添加按钮到行
+                        if (!row.querySelector('.expand-btn')) {
+                            row.appendChild(expandBtn);
+                        }
+                        
+                        // 添加行点击事件
+                        row.style.cursor = 'pointer';
+                        row.onclick = function() {
+                            const isExpanded = this.classList.toggle('expanded');
+                            const btn = this.querySelector('.expand-btn');
+                            if (btn) {
+                                btn.textContent = isExpanded ? '收起' : '展开详情';
+                            }
+                        };
+                    });
+                }
+
+                // 添加表格排序功能
+                function initTableSort() {
+                    const headers = Array.from(table.querySelectorAll('th'));
+                    headers.forEach((header, index) => {
+                        if (['每周在校学习小时数', '每月假期天数', '寒假放假天数', '24年学生自杀数'].includes(header.textContent)) {
+                            header.classList.add('sortable');
+                            header.addEventListener('click', () => sortTable(index, header));
+                        }
+                    });
+                }
+
+                function sortTable(columnIndex, header) {
+                    const tbody = table.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    const isAsc = !header.classList.contains('asc');
+                    
+                    // 清除所有排序标记
+                    table.querySelectorAll('.sortable').forEach(h => {
+                        h.classList.remove('asc', 'desc');
+                    });
+                    
+                    // 添加新的排序标记
+                    header.classList.add(isAsc ? 'asc' : 'desc');
+                    
+                    const sortedRows = rows.sort((a, b) => {
+                        const aValue = parseFloat(a.cells[columnIndex].textContent) || 0;
+                        const bValue = parseFloat(b.cells[columnIndex].textContent) || 0;
+                        return isAsc ? aValue - bValue : bValue - aValue;
+                    });
+                    
+                    // 重新插入排序后的行
+                    tbody.innerHTML = '';
+                    sortedRows.forEach(row => tbody.appendChild(row));
+                    
+                    // 更新统计数据
+                    updateFilteredStats();
+                }
 
                 // 初始化
                 initTotalStats();
