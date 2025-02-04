@@ -36,10 +36,22 @@ def fetch_and_convert():
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>611Study.ICU - 全国超时学习学校耻辱名单</title>
         <style>
+            :root {{
+                --primary-color: #1a73e8;
+                --danger-color: #dc3545;
+                --warning-color: #ffc107;
+            }}
             body {{
-                font-family: Arial, sans-serif;
-                margin: 20px;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
                 line-height: 1.6;
+                color: #333;
+            }}
+            .container {{
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 0 15px;
             }}
             .controls {{
                 margin: 20px 0;
@@ -48,76 +60,157 @@ def fetch_and_convert():
                 flex-wrap: wrap;
             }}
             .search-box {{
-                padding: 8px;
+                padding: 12px;
                 border: 1px solid #ddd;
-                border-radius: 4px;
-                width: 300px;
-                max-width: 100%;
+                border-radius: 8px;
+                width: 100%;
+                max-width: 400px;
+                font-size: 16px;
+                transition: all 0.3s ease;
+            }}
+            .search-box:focus {{
+                outline: none;
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
             }}
             .filter-container {{
                 display: flex;
-                gap: 10px;
+                gap: 15px;
                 flex-wrap: wrap;
+                width: 100%;
+            }}
+            .filter-group {{
+                flex: 1;
+                min-width: 200px;
             }}
             .filter-select {{
-                padding: 8px;
+                width: 100%;
+                padding: 12px;
                 border: 1px solid #ddd;
-                border-radius: 4px;
-                min-width: 150px;
+                border-radius: 8px;
+                font-size: 16px;
+                background-color: white;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }}
+            .filter-select:focus {{
+                outline: none;
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+            }}
+            .table-responsive {{
+                overflow-x: auto;
+                margin: 20px 0;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }}
             table {{
                 border-collapse: collapse;
                 width: 100%;
-                margin: 20px 0;
+                margin: 0;
+                background: white;
             }}
             th, td {{
-                border: 1px solid #ddd;
-                padding: 12px;
+                border: 1px solid #eee;
+                padding: 15px;
                 text-align: left;
+                font-size: 14px;
             }}
             th {{
-                background-color: #f4f4f4;
-                position: relative;
+                background-color: #f8f9fa;
+                font-weight: 600;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+            }}
+            td {{
+                vertical-align: top;
             }}
             tr:nth-child(even) {{
-                background-color: #f9f9f9;
+                background-color: #f8f9fa;
             }}
             tr:hover {{
-                background-color: #f5f5f5;
+                background-color: #f0f7ff;
             }}
             .last-updated {{
                 color: #666;
                 font-size: 0.9em;
-                margin-bottom: 10px;
+                margin-bottom: 15px;
             }}
             .timezone-notice {{
-                color: #ff4444;
+                color: var(--danger-color);
                 font-size: 0.9em;
                 margin-bottom: 20px;
+                padding: 10px;
+                background-color: rgba(220, 53, 69, 0.1);
+                border-radius: 8px;
             }}
             .highlight {{
-                background-color: #ffeb3b;
-                padding: 2px;
-                border-radius: 2px;
+                background-color: var(--warning-color);
+                padding: 2px 4px;
+                border-radius: 4px;
             }}
             .hidden {{
                 display: none;
             }}
+            .stats-container {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 20px;
+                margin: 20px 0;
+            }}
+            .stat-card {{
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }}
+            .stat-value {{
+                font-size: 24px;
+                font-weight: bold;
+                color: var(--primary-color);
+            }}
+            .stat-label {{
+                color: #666;
+                font-size: 14px;
+            }}
+            @media (max-width: 768px) {{
+                .controls {{
+                    flex-direction: column;
+                    gap: 15px;
+                }}
+                .search-box {{
+                    max-width: 100%;
+                }}
+                .filter-group {{
+                    min-width: 100%;
+                }}
+                th, td {{
+                    padding: 10px;
+                    font-size: 13px;
+                }}
+            }}
         </style>
     </head>
     <body>
-        <div class="last-updated">最后更新时间：{current_time} (UTC+8)</div>
-        <div class="timezone-notice">注意！本站时间与原表格一致，<u>仅最后更新时间</u>为北京时间。</div>
-        
-        <div class="controls">
-            <input type="text" class="search-box" placeholder="输入关键词进行搜索..." id="searchInput">
-            <div class="filter-container" id="filterContainer">
-                <!-- Filter dropdowns will be added here dynamically -->
+        <div class="container">
+            <div class="last-updated">最后更新时间：{current_time} (UTC+8)</div>
+            <div class="timezone-notice">注意！本站时间与原表格一致，<u>仅最后更新时间</u>为北京时间。</div>
+            
+            <div class="stats-container" id="statsContainer">
+                <!-- 统计卡片将通过JavaScript动态添加 -->
             </div>
-        </div>
+            
+            <div class="controls">
+                <input type="text" class="search-box" placeholder="输入关键词进行搜索..." id="searchInput">
+                <div class="filter-container" id="filterContainer">
+                    <!-- 筛选下拉框将通过JavaScript动态添加 -->
+                </div>
+            </div>
 
-        <div id="tableContainer">
-            {df.to_html(index=False, classes='table', escape=False)}
+            <div class="table-responsive">
+                {df.to_html(index=False, classes='table', escape=False)}
+            </div>
         </div>
 
         <script>
@@ -125,46 +218,128 @@ def fetch_and_convert():
                 const table = document.querySelector('table');
                 const searchInput = document.getElementById('searchInput');
                 const filterContainer = document.getElementById('filterContainer');
+                const statsContainer = document.getElementById('statsContainer');
                 
-                // Create filter dropdowns for each column
+                // 创建统计数据
+                function updateStats() {{
+                    const visibleRows = Array.from(table.querySelectorAll('tr:not(.hidden)')).slice(1);
+                    const stats = {{
+                        totalSchools: visibleRows.length,
+                        avgHours: Math.round(visibleRows.reduce((sum, row) => 
+                            sum + parseFloat(row.cells[6].textContent || 0), 0) / visibleRows.length || 0),
+                        totalSuicides: visibleRows.reduce((sum, row) => 
+                            sum + parseInt(row.cells[9].textContent || 0), 0),
+                        earlyStart: visibleRows.filter(row => {{
+                            const startTime = row.cells[10].textContent;
+                            return startTime && startTime.includes('05:') || startTime.includes('06:');
+                        }}).length
+                    }};
+
+                    statsContainer.innerHTML = `
+                        <div class="stat-card">
+                            <div class="stat-value">${{stats.totalSchools}}</div>
+                            <div class="stat-label">符合条件的学校数量</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${{stats.avgHours}}</div>
+                            <div class="stat-label">平均每周在校学习小时数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${{stats.totalSuicides}}</div>
+                            <div class="stat-label">总自杀人数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${{stats.earlyStart}}</div>
+                            <div class="stat-label">早于7点上学的学校数</div>
+                        </div>
+                    `;
+                }}
+
+                // 创建筛选器组
                 const headers = Array.from(table.querySelectorAll('th'));
                 headers.forEach((header, index) => {{
                     const values = new Set();
                     Array.from(table.querySelectorAll(`td:nth-child(${{index + 1}})`))
                         .forEach(cell => values.add(cell.textContent.trim()));
 
-                    const select = document.createElement('select');
-                    select.className = 'filter-select';
-                    select.innerHTML = `
-                        <option value="">筛选 ${{header.textContent}}</option>
-                        ${{Array.from(values).sort().map(value => 
-                            `<option value="${{value}}">${{value}}</option>`
-                        ).join('')}}
-                    `;
-                    
-                    select.addEventListener('change', applyFilters);
-                    filterContainer.appendChild(select);
+                    // 只为有意义的列创建筛选器
+                    if (['省份', '城市', '区县', '年级'].includes(header.textContent)) {{
+                        const filterGroup = document.createElement('div');
+                        filterGroup.className = 'filter-group';
+                        
+                        const select = document.createElement('select');
+                        select.className = 'filter-select';
+                        select.innerHTML = `
+                            <option value="">筛选${{header.textContent}}</option>
+                            ${{Array.from(values).sort().map(value => 
+                                `<option value="${{value}}">${{value}}</option>`
+                            ).join('')}}
+                        `;
+                        
+                        select.addEventListener('change', () => {{
+                            applyFilters();
+                            // 连锁效应：更新其他筛选器的可选项
+                            updateFilterOptions(index);
+                        }});
+                        
+                        filterGroup.appendChild(select);
+                        filterContainer.appendChild(filterGroup);
+                    }}
                 }});
 
-                // Search and highlight functionality
-                searchInput.addEventListener('input', applyFilters);
+                // 更新筛选器选项（连锁效应）
+                function updateFilterOptions(changedIndex) {{
+                    const filters = Array.from(document.querySelectorAll('.filter-select'));
+                    const activeFilters = filters.map(select => ({{
+                        index: headers.findIndex(h => h.textContent === select.options[0].textContent.replace('筛选', '')),
+                        value: select.value.toLowerCase()
+                    }}));
 
+                    // 获取当前可见的行
+                    const visibleRows = Array.from(table.querySelectorAll('tr:not(.hidden)')).slice(1);
+
+                    filters.forEach((select, filterIndex) => {{
+                        if (filterIndex === changedIndex) return; // 跳过触发变化的筛选器
+
+                        const columnIndex = headers.findIndex(h => 
+                            h.textContent === select.options[0].textContent.replace('筛选', ''));
+                        
+                        // 收集可用的选项
+                        const availableValues = new Set();
+                        visibleRows.forEach(row => {{
+                            availableValues.add(row.cells[columnIndex].textContent.trim());
+                        }});
+
+                        // 保存当前选中的值
+                        const currentValue = select.value;
+                        
+                        // 更新选项
+                        select.innerHTML = `
+                            <option value="">筛选${{headers[columnIndex].textContent}}</option>
+                            ${{Array.from(availableValues).sort().map(value => 
+                                `<option value="${{value}}" ${{value === currentValue ? 'selected' : ''}}>${{value}}</option>`
+                            ).join('')}}
+                        `;
+                    }});
+                }}
+
+                // 应用筛选和搜索
                 function applyFilters() {{
                     const searchTerm = searchInput.value.toLowerCase();
                     const filterValues = Array.from(document.querySelectorAll('.filter-select'))
                         .map(select => ({{
-                            index: Array.from(select.parentNode.children).indexOf(select),
+                            index: headers.findIndex(h => h.textContent === select.options[0].textContent.replace('筛选', '')),
                             value: select.value.toLowerCase()
                         }}));
 
                     const rows = Array.from(table.querySelectorAll('tr'));
                     
-                    // Skip header row
+                    // 跳过表头行
                     rows.slice(1).forEach(row => {{
                         const cells = Array.from(row.querySelectorAll('td'));
                         const rowText = cells.map(cell => cell.textContent.toLowerCase()).join(' ');
                         
-                        // Check if row matches search term and all active filters
+                        // 检查是否匹配搜索词和所有激活的筛选器
                         const matchesSearch = searchTerm === '' || rowText.includes(searchTerm);
                         const matchesFilters = filterValues.every(filter => 
                             filter.value === '' || 
@@ -173,7 +348,7 @@ def fetch_and_convert():
 
                         if (matchesSearch && matchesFilters) {{
                             row.classList.remove('hidden');
-                            // Highlight search term
+                            // 高亮搜索词
                             if (searchTerm) {{
                                 cells.forEach(cell => {{
                                     const text = cell.textContent;
@@ -191,7 +366,16 @@ def fetch_and_convert():
                             row.classList.add('hidden');
                         }}
                     }});
+
+                    // 更新统计数据
+                    updateStats();
                 }}
+
+                // 监听搜索输入
+                searchInput.addEventListener('input', applyFilters);
+
+                // 初始化统计数据
+                updateStats();
             }});
         </script>
     </body>
