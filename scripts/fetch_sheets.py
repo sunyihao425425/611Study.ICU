@@ -201,22 +201,21 @@ def fetch_and_convert():
                     display: block;
                 }}
                 table tr {{
-                    display: grid;
-                    grid-template-columns: 1fr;
-                    gap: 0;
-                    margin-bottom: 15px;
+                    display: block;
+                    margin: 0 15px 15px;
                     background: white;
                     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
                     border-radius: 8px;
+                    position: relative;
                 }}
                 table td {{
-                    display: none; /* 默认隐藏所有单元格 */
+                    display: none;
                     padding: 8px 15px;
                     font-size: 14px;
                     border: none;
                     border-bottom: 1px solid #eee;
                 }}
-                /* 只显示重要信息 */
+                /* 默认显示的重要信息 */
                 table td[data-label="时间戳记"],
                 table td[data-label="省份"],
                 table td[data-label="城市"],
@@ -226,43 +225,71 @@ def fetch_and_convert():
                     display: block;
                 }}
                 /* 展开/收起按钮 */
-                table tr {{
-                    position: relative;
-                }}
                 .expand-btn {{
                     position: absolute;
-                    right: 10px;
-                    top: 10px;
-                    background: #f0f0f0;
+                    right: 15px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: var(--primary-color);
+                    color: white;
                     border: none;
                     border-radius: 4px;
-                    padding: 4px 8px;
+                    padding: 6px 12px;
                     font-size: 12px;
                     cursor: pointer;
                     z-index: 1;
+                    opacity: 0.9;
+                    transition: opacity 0.3s ease;
+                }}
+                .expand-btn:hover {{
+                    opacity: 1;
                 }}
                 .expanded td {{
-                    display: block !important;
+                    display: block;
                 }}
                 /* 优化关键信息显示 */
                 table td[data-label="时间戳记"] {{
-                    font-weight: bold;
+                    font-weight: 500;
                     background: #f8f9fa;
                     color: var(--primary-color);
-                    padding-right: 60px; /* 为展开按钮留出空间 */
+                    padding-right: 80px;
+                    font-size: 13px;
+                }}
+                table td[data-label="学校名称"] {{
+                    font-size: 16px;
+                    font-weight: bold;
+                    padding-right: 80px;
                 }}
                 table td[data-label="每周在校学习小时数"],
                 table td[data-label="24年学生自杀数"] {{
                     color: var(--danger-color);
+                    font-weight: bold;
                 }}
                 /* 为每个单元格添加标签 */
                 table td:before {{
                     content: attr(data-label);
                     display: block;
-                    font-weight: bold;
                     color: #666;
                     font-size: 12px;
+                    font-weight: normal;
                     margin-bottom: 4px;
+                }}
+                /* 移动端卡片式布局优化 */
+                .mobile-card-header {{
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding-right: 80px;
+                }}
+                .mobile-card-content {{
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 8px;
+                }}
+                @media (max-width: 480px) {{
+                    .mobile-card-content {{
+                        grid-template-columns: 1fr;
+                    }}
                 }}
             }}
             /* 添加表格排序样式 */
@@ -463,14 +490,42 @@ def fetch_and_convert():
                 function addExpandButtons() {{
                     const rows = Array.from(table.querySelectorAll('tr')).slice(1);
                     rows.forEach(row => {{
+                        // 创建展开按钮
                         const expandBtn = document.createElement('button');
                         expandBtn.className = 'expand-btn';
-                        expandBtn.textContent = '展开';
-                        expandBtn.onclick = function() {{
+                        expandBtn.textContent = '展开详情';
+                        expandBtn.onclick = function(e) {{
+                            e.stopPropagation();
                             const isExpanded = row.classList.toggle('expanded');
-                            this.textContent = isExpanded ? '收起' : '展开';
+                            this.textContent = isExpanded ? '收起' : '展开详情';
                         }};
-                        row.appendChild(expandBtn);
+                        
+                        // 添加按钮到行
+                        if (!row.querySelector('.expand-btn')) {{
+                            row.appendChild(expandBtn);
+                        }}
+                        
+                        // 添加行点击事件
+                        row.style.cursor = 'pointer';
+                        row.onclick = function() {{
+                            const isExpanded = this.classList.toggle('expanded');
+                            const btn = this.querySelector('.expand-btn');
+                            if (btn) {{
+                                btn.textContent = isExpanded ? '收起' : '展开详情';
+                            }}
+                        }};
+                    }});
+                }}
+
+                // 为移动端添加数据标签
+                function addMobileDataLabels() {{
+                    const rows = Array.from(table.querySelectorAll('tr'));
+                    const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent);
+                    
+                    rows.slice(1).forEach(row => {{
+                        Array.from(row.cells).forEach((cell, index) => {{
+                            cell.setAttribute('data-label', headers[index]);
+                        }});
                     }});
                 }}
 
