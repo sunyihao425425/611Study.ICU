@@ -11,6 +11,30 @@
                 margin: 20px;
                 line-height: 1.6;
             }
+            .controls {
+                margin: 20px 0;
+                display: flex;
+                gap: 20px;
+                flex-wrap: wrap;
+            }
+            .search-box {
+                padding: 8px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                width: 300px;
+                max-width: 100%;
+            }
+            .filter-container {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            .filter-select {
+                padding: 8px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                min-width: 150px;
+            }
             table {
                 border-collapse: collapse;
                 width: 100%;
@@ -23,6 +47,7 @@
             }
             th {
                 background-color: #f4f4f4;
+                position: relative;
             }
             tr:nth-child(even) {
                 background-color: #f9f9f9;
@@ -40,12 +65,29 @@
                 font-size: 0.9em;
                 margin-bottom: 20px;
             }
+            .highlight {
+                background-color: #ffeb3b;
+                padding: 2px;
+                border-radius: 2px;
+            }
+            .hidden {
+                display: none;
+            }
         </style>
     </head>
     <body>
-        <div class="last-updated">最后更新时间：2025-02-04 12:11:56 (UTC+8)</div>
+        <div class="last-updated">最后更新时间：2025-02-04 12:21:49 (UTC+8)</div>
         <div class="timezone-notice">注意！本站时间与原表格一致，<u>仅最后更新时间</u>为北京时间。</div>
-        <table border="1" class="dataframe table">
+        
+        <div class="controls">
+            <input type="text" class="search-box" placeholder="输入关键词进行搜索..." id="searchInput">
+            <div class="filter-container" id="filterContainer">
+                <!-- Filter dropdowns will be added here dynamically -->
+            </div>
+        </div>
+
+        <div id="tableContainer">
+            <table border="1" class="dataframe table">
   <thead>
     <tr style="text-align: right;">
       <th>时间戳记</th>
@@ -9618,8 +9660,164 @@
       <td>0</td>
       <td>寒假强制补课</td>
     </tr>
+    <tr>
+      <td>2025-2-4 下午03:12:04</td>
+      <td>陕西</td>
+      <td>西安市</td>
+      <td>碑林区</td>
+      <td>西安市铁一中学</td>
+      <td>12</td>
+      <td>95</td>
+      <td>4</td>
+      <td>8</td>
+      <td>0</td>
+      <td>上午07:10:00</td>
+      <td>上午11:00:00</td>
+      <td>2000</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>2025-2-4 下午03:15:33</td>
+      <td>北京</td>
+      <td>北京市</td>
+      <td>大兴区</td>
+      <td>清华附中大兴学校</td>
+      <td>9</td>
+      <td>71</td>
+      <td>6</td>
+      <td>17</td>
+      <td>0</td>
+      <td>上午07:20:00</td>
+      <td>下午09:00:00</td>
+      <td>0</td>
+      <td>学校有舆论监督机构 网络发对学校不利言论会被约谈</td>
+    </tr>
+    <tr>
+      <td>2025-2-4 下午03:15:59</td>
+      <td>四川</td>
+      <td>广安市</td>
+      <td>广安区</td>
+      <td>广安友实学校</td>
+      <td>12</td>
+      <td>120</td>
+      <td>0</td>
+      <td>3</td>
+      <td>0</td>
+      <td>上午06:30:00</td>
+      <td>下午11:30:00</td>
+      <td>3000</td>
+      <td>去年自杀人数不清楚。但是老师和教职工全部是势利眼，总是迫害打压穷学生，还一直跪舔家庭条件很好的“学生”，完全是一副拜金媚官的贱人相。那些人渣“老师”天天自我标榜自己多高尚，其实全部都是撒谎精，一直抹黑造谣对手学校。人渣“老师”们还酷爱体罚学生。那些人渣“老师”只会推卸责任，出了什么问题永远是学生的错。明明是自己教学质量太差劲，学历极其低，没一个本科的，普通话都讲不利索，还怪学生每天不睡觉做卷子没有做到它们满意。垃圾学校一直摆不清自己的位置，人渣败类“教师”教学质量奇差，每周周考，每月月考，除了压榨学生时间什么都不会。天天考试，每天的作业做到晚上4点都做不完。平时从来不放假，一直不放假，放个3天布置10天的作业。学费收得高又不做实事，只会吹牛逼。上课讲课说话一直没有逻辑，一听谈吐就知道没上过学。</td>
+    </tr>
+    <tr>
+      <td>2025-2-4 下午03:16:41</td>
+      <td>重庆</td>
+      <td>重庆市</td>
+      <td>两江新区</td>
+      <td>西南大学附属中学</td>
+      <td>12</td>
+      <td>103.5</td>
+      <td>1</td>
+      <td>6</td>
+      <td>2</td>
+      <td>上午07:20:00</td>
+      <td>下午10:50:00</td>
+      <td>0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>2025-2-4 下午03:18:35</td>
+      <td>广西</td>
+      <td>柳州市</td>
+      <td>鱼峰区</td>
+      <td>柳州市第八中学</td>
+      <td>9</td>
+      <td>84</td>
+      <td>1</td>
+      <td>24</td>
+      <td>1</td>
+      <td>上午06:50:00</td>
+      <td>下午11:30:00</td>
+      <td>0</td>
+      <td></td>
+    </tr>
   </tbody>
 </table>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const table = document.querySelector('table');
+                const searchInput = document.getElementById('searchInput');
+                const filterContainer = document.getElementById('filterContainer');
+                
+                // Create filter dropdowns for each column
+                const headers = Array.from(table.querySelectorAll('th'));
+                headers.forEach((header, index) => {
+                    const values = new Set();
+                    Array.from(table.querySelectorAll(`td:nth-child(${index + 1})`))
+                        .forEach(cell => values.add(cell.textContent.trim()));
+
+                    const select = document.createElement('select');
+                    select.className = 'filter-select';
+                    select.innerHTML = `
+                        <option value="">筛选 ${header.textContent}</option>
+                        ${Array.from(values).sort().map(value => 
+                            `<option value="${value}">${value}</option>`
+                        ).join('')}
+                    `;
+                    
+                    select.addEventListener('change', applyFilters);
+                    filterContainer.appendChild(select);
+                });
+
+                // Search and highlight functionality
+                searchInput.addEventListener('input', applyFilters);
+
+                function applyFilters() {
+                    const searchTerm = searchInput.value.toLowerCase();
+                    const filterValues = Array.from(document.querySelectorAll('.filter-select'))
+                        .map(select => ({
+                            index: Array.from(select.parentNode.children).indexOf(select),
+                            value: select.value.toLowerCase()
+                        }));
+
+                    const rows = Array.from(table.querySelectorAll('tr'));
+                    
+                    // Skip header row
+                    rows.slice(1).forEach(row => {
+                        const cells = Array.from(row.querySelectorAll('td'));
+                        const rowText = cells.map(cell => cell.textContent.toLowerCase()).join(' ');
+                        
+                        // Check if row matches search term and all active filters
+                        const matchesSearch = searchTerm === '' || rowText.includes(searchTerm);
+                        const matchesFilters = filterValues.every(filter => 
+                            filter.value === '' || 
+                            cells[filter.index].textContent.toLowerCase() === filter.value
+                        );
+
+                        if (matchesSearch && matchesFilters) {
+                            row.classList.remove('hidden');
+                            // Highlight search term
+                            if (searchTerm) {
+                                cells.forEach(cell => {
+                                    const text = cell.textContent;
+                                    const regex = new RegExp(searchTerm, 'gi');
+                                    cell.innerHTML = text.replace(regex, match => 
+                                        `<span class="highlight">${match}</span>`
+                                    );
+                                });
+                            } else {
+                                cells.forEach(cell => {
+                                    cell.innerHTML = cell.textContent;
+                                });
+                            }
+                        } else {
+                            row.classList.add('hidden');
+                        }
+                    });
+                }
+            });
+        </script>
     </body>
     </html>
     
