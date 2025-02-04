@@ -8,6 +8,20 @@ import pytz
 SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1P48quxwMv9XsYQhXjLOvTRRq8tt3ahJnkbXo4VCxjLc/edit?gid=1615412834'
 
+def convert_timestamp(timestamp_str):
+    try:
+        # 处理 "上午/下午" 的时间格式
+        if '上午' in timestamp_str:
+            timestamp_str = timestamp_str.replace('上午', 'AM')
+        elif '下午' in timestamp_str:
+            timestamp_str = timestamp_str.replace('下午', 'PM')
+        
+        # 将时间字符串解析为datetime对象
+        dt = pd.to_datetime(timestamp_str, format='%Y-%m-%d %p%I:%M:%S')
+        return dt.strftime('%Y-%m-%d %H:%M:%S')
+    except:
+        return timestamp_str
+
 def fetch_and_convert():
     # Authenticate with Google
     credentials = ServiceAccountCredentials.from_json_keyfile_name('service_account.json', SCOPE)
@@ -22,6 +36,10 @@ def fetch_and_convert():
     
     # Convert to pandas DataFrame
     df = pd.DataFrame(data[1:], columns=data[0])
+    
+    # 转换时间戳记列
+    if '时间戳记' in df.columns:
+        df['时间戳记'] = df['时间戳记'].apply(convert_timestamp)
     
     # Get current time in UTC+8
     china_tz = pytz.timezone('Asia/Shanghai')
@@ -63,12 +81,18 @@ def fetch_and_convert():
             .last-updated {{
                 color: #666;
                 font-size: 0.9em;
+                margin-bottom: 10px;
+            }}
+            .timezone-notice {{
+                color: #ff4444;
+                font-size: 0.9em;
                 margin-bottom: 20px;
             }}
         </style>
     </head>
     <body>
         <div class="last-updated">最后更新时间：{current_time} (UTC+8)</div>
+        <div class="timezone-notice">注意！本站时间与原表格不同，为便于理解，已转换为北京时间！</div>
         {df.to_html(index=False, classes='table', escape=False)}
     </body>
     </html>
