@@ -6,10 +6,22 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>611Study.ICU - 全国超时学习学校耻辱名单</title>
         <style>
+            :root {
+                --primary-color: #1a73e8;
+                --danger-color: #dc3545;
+                --warning-color: #ffc107;
+            }
             body {
-                font-family: Arial, sans-serif;
-                margin: 20px;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
                 line-height: 1.6;
+                color: #333;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 0 15px;
             }
             .controls {
                 margin: 20px 0;
@@ -18,76 +30,156 @@
                 flex-wrap: wrap;
             }
             .search-box {
-                padding: 8px;
+                padding: 12px;
                 border: 1px solid #ddd;
-                border-radius: 4px;
-                width: 300px;
-                max-width: 100%;
+                border-radius: 8px;
+                width: 100%;
+                max-width: 400px;
+                font-size: 16px;
+                transition: all 0.3s ease;
+            }
+            .search-box:focus {
+                outline: none;
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
             }
             .filter-container {
                 display: flex;
-                gap: 10px;
+                gap: 15px;
                 flex-wrap: wrap;
+                width: 100%;
+            }
+            .filter-group {
+                flex: 1;
+                min-width: 200px;
             }
             .filter-select {
-                padding: 8px;
+                width: 100%;
+                padding: 12px;
                 border: 1px solid #ddd;
-                border-radius: 4px;
-                min-width: 150px;
+                border-radius: 8px;
+                font-size: 16px;
+                background-color: white;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            .filter-select:focus {
+                outline: none;
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+            }
+            .table-responsive {
+                overflow-x: auto;
+                margin: 20px 0;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
             table {
                 border-collapse: collapse;
                 width: 100%;
-                margin: 20px 0;
+                margin: 0;
+                background: white;
             }
             th, td {
-                border: 1px solid #ddd;
-                padding: 12px;
+                border: 1px solid #eee;
+                padding: 15px;
                 text-align: left;
+                font-size: 14px;
             }
             th {
-                background-color: #f4f4f4;
-                position: relative;
+                background-color: #f8f9fa;
+                font-weight: 600;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+            }
+            td {
+                vertical-align: top;
             }
             tr:nth-child(even) {
-                background-color: #f9f9f9;
+                background-color: #f8f9fa;
             }
             tr:hover {
-                background-color: #f5f5f5;
+                background-color: #f0f7ff;
             }
             .last-updated {
                 color: #666;
                 font-size: 0.9em;
-                margin-bottom: 10px;
+                margin-bottom: 15px;
             }
             .timezone-notice {
-                color: #ff4444;
+                color: var(--danger-color);
                 font-size: 0.9em;
                 margin-bottom: 20px;
+                padding: 10px;
+                background-color: rgba(220, 53, 69, 0.1);
+                border-radius: 8px;
             }
             .highlight {
-                background-color: #ffeb3b;
-                padding: 2px;
-                border-radius: 2px;
+                background-color: var(--warning-color);
+                padding: 2px 4px;
+                border-radius: 4px;
             }
             .hidden {
                 display: none;
             }
+            .stats-container {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 20px;
+                margin: 20px 0;
+            }
+            .stat-card {
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .stat-value {
+                font-size: 24px;
+                font-weight: bold;
+                color: var(--primary-color);
+            }
+            .stat-label {
+                color: #666;
+                font-size: 14px;
+            }
+            @media (max-width: 768px) {
+                .controls {
+                    flex-direction: column;
+                    gap: 15px;
+                }
+                .search-box {
+                    max-width: 100%;
+                }
+                .filter-group {
+                    min-width: 100%;
+                }
+                th, td {
+                    padding: 10px;
+                    font-size: 13px;
+                }
+            }
         </style>
     </head>
     <body>
-        <div class="last-updated">最后更新时间：2025-02-04 12:23:39 (UTC+8)</div>
-        <div class="timezone-notice">注意！本站时间与原表格一致，<u>仅最后更新时间</u>为北京时间。</div>
-        
-        <div class="controls">
-            <input type="text" class="search-box" placeholder="输入关键词进行搜索..." id="searchInput">
-            <div class="filter-container" id="filterContainer">
-                <!-- Filter dropdowns will be added here dynamically -->
+        <div class="container">
+            <div class="last-updated">最后更新时间：2025-02-04 12:28:47 (UTC+8)</div>
+            <div class="timezone-notice">注意！本站时间与原表格一致，<u>仅最后更新时间</u>为北京时间。</div>
+            
+            <div class="stats-container" id="statsContainer">
+                <!-- 统计卡片将通过JavaScript动态添加 -->
             </div>
-        </div>
+            
+            <div class="controls">
+                <input type="text" class="search-box" placeholder="输入关键词进行搜索..." id="searchInput">
+                <div class="filter-container" id="filterContainer">
+                    <!-- 筛选下拉框将通过JavaScript动态添加 -->
+                </div>
+            </div>
 
-        <div id="tableContainer">
-            <table border="1" class="dataframe table">
+            <div class="table-responsive">
+                <table border="1" class="dataframe table">
   <thead>
     <tr style="text-align: right;">
       <th>时间戳记</th>
@@ -9772,8 +9864,57 @@
       <td>2000</td>
       <td>之前张万琼校长在的时候对学生很好，学校里老一辈的教师普遍都非常优秀，关心学生、认真教学，深受大家的喜爱。后来换校长欧建之后，疯狂建分校扩招，逼学生逼老师出高考成绩，个别教师长期对学生进行精神上的打压，甚至用“你们不配做人”之类的言辞来贬低学生，给他们造成了严重的心理负担。还势利眼歧视学生，对农村户口、贫困生等群体流露出明显的歧视和势利眼的态度。</td>
     </tr>
+    <tr>
+      <td>2025-2-4 下午03:24:23</td>
+      <td>湖北</td>
+      <td>十堰市</td>
+      <td>竹山县</td>
+      <td>南山五福堂高级中学</td>
+      <td>10</td>
+      <td>204</td>
+      <td>3</td>
+      <td>20</td>
+      <td>1</td>
+      <td>上午06:00:00</td>
+      <td>上午09:45:00</td>
+      <td>500</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>2025-2-4 下午03:25:00</td>
+      <td>河南</td>
+      <td>焦作市</td>
+      <td>沁阳市</td>
+      <td>沁阳市第一中学</td>
+      <td>12</td>
+      <td>119</td>
+      <td>1</td>
+      <td>6</td>
+      <td>2</td>
+      <td>上午05:50:00</td>
+      <td>下午10:20:00</td>
+      <td>0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>2025-2-4 下午03:28:11</td>
+      <td>广东</td>
+      <td>惠州市</td>
+      <td>龙门县</td>
+      <td>龙门县龙门中学</td>
+      <td>12</td>
+      <td>83</td>
+      <td>3.5</td>
+      <td>11</td>
+      <td>0</td>
+      <td>上午06:43:00</td>
+      <td>下午10:00:00</td>
+      <td>0</td>
+      <td>前几年河南籍段县长在学校开会时直接说出如果有学生抗拒星期六日上课去网上投诉就立即开除</td>
+    </tr>
   </tbody>
 </table>
+            </div>
         </div>
 
         <script>
@@ -9781,46 +9922,128 @@
                 const table = document.querySelector('table');
                 const searchInput = document.getElementById('searchInput');
                 const filterContainer = document.getElementById('filterContainer');
+                const statsContainer = document.getElementById('statsContainer');
                 
-                // Create filter dropdowns for each column
+                // 创建统计数据
+                function updateStats() {
+                    const visibleRows = Array.from(table.querySelectorAll('tr:not(.hidden)')).slice(1);
+                    const stats = {
+                        totalSchools: visibleRows.length,
+                        avgHours: Math.round(visibleRows.reduce((sum, row) => 
+                            sum + parseFloat(row.cells[6].textContent || 0), 0) / visibleRows.length || 0),
+                        totalSuicides: visibleRows.reduce((sum, row) => 
+                            sum + parseInt(row.cells[9].textContent || 0), 0),
+                        earlyStart: visibleRows.filter(row => {
+                            const startTime = row.cells[10].textContent;
+                            return startTime && startTime.includes('05:') || startTime.includes('06:');
+                        }).length
+                    };
+
+                    statsContainer.innerHTML = `
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.totalSchools}</div>
+                            <div class="stat-label">符合条件的学校数量</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.avgHours}</div>
+                            <div class="stat-label">平均每周在校学习小时数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.totalSuicides}</div>
+                            <div class="stat-label">总自杀人数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.earlyStart}</div>
+                            <div class="stat-label">早于7点上学的学校数</div>
+                        </div>
+                    `;
+                }
+
+                // 创建筛选器组
                 const headers = Array.from(table.querySelectorAll('th'));
                 headers.forEach((header, index) => {
                     const values = new Set();
                     Array.from(table.querySelectorAll(`td:nth-child(${index + 1})`))
                         .forEach(cell => values.add(cell.textContent.trim()));
 
-                    const select = document.createElement('select');
-                    select.className = 'filter-select';
-                    select.innerHTML = `
-                        <option value="">筛选 ${header.textContent}</option>
-                        ${Array.from(values).sort().map(value => 
-                            `<option value="${value}">${value}</option>`
-                        ).join('')}
-                    `;
-                    
-                    select.addEventListener('change', applyFilters);
-                    filterContainer.appendChild(select);
+                    // 只为有意义的列创建筛选器
+                    if (['省份', '城市', '区县', '年级'].includes(header.textContent)) {
+                        const filterGroup = document.createElement('div');
+                        filterGroup.className = 'filter-group';
+                        
+                        const select = document.createElement('select');
+                        select.className = 'filter-select';
+                        select.innerHTML = `
+                            <option value="">筛选${header.textContent}</option>
+                            ${Array.from(values).sort().map(value => 
+                                `<option value="${value}">${value}</option>`
+                            ).join('')}
+                        `;
+                        
+                        select.addEventListener('change', () => {
+                            applyFilters();
+                            // 连锁效应：更新其他筛选器的可选项
+                            updateFilterOptions(index);
+                        });
+                        
+                        filterGroup.appendChild(select);
+                        filterContainer.appendChild(filterGroup);
+                    }
                 });
 
-                // Search and highlight functionality
-                searchInput.addEventListener('input', applyFilters);
+                // 更新筛选器选项（连锁效应）
+                function updateFilterOptions(changedIndex) {
+                    const filters = Array.from(document.querySelectorAll('.filter-select'));
+                    const activeFilters = filters.map(select => ({
+                        index: headers.findIndex(h => h.textContent === select.options[0].textContent.replace('筛选', '')),
+                        value: select.value.toLowerCase()
+                    }));
 
+                    // 获取当前可见的行
+                    const visibleRows = Array.from(table.querySelectorAll('tr:not(.hidden)')).slice(1);
+
+                    filters.forEach((select, filterIndex) => {
+                        if (filterIndex === changedIndex) return; // 跳过触发变化的筛选器
+
+                        const columnIndex = headers.findIndex(h => 
+                            h.textContent === select.options[0].textContent.replace('筛选', ''));
+                        
+                        // 收集可用的选项
+                        const availableValues = new Set();
+                        visibleRows.forEach(row => {
+                            availableValues.add(row.cells[columnIndex].textContent.trim());
+                        });
+
+                        // 保存当前选中的值
+                        const currentValue = select.value;
+                        
+                        // 更新选项
+                        select.innerHTML = `
+                            <option value="">筛选${headers[columnIndex].textContent}</option>
+                            ${Array.from(availableValues).sort().map(value => 
+                                `<option value="${value}" ${value === currentValue ? 'selected' : ''}>${value}</option>`
+                            ).join('')}
+                        `;
+                    });
+                }
+
+                // 应用筛选和搜索
                 function applyFilters() {
                     const searchTerm = searchInput.value.toLowerCase();
                     const filterValues = Array.from(document.querySelectorAll('.filter-select'))
                         .map(select => ({
-                            index: Array.from(select.parentNode.children).indexOf(select),
+                            index: headers.findIndex(h => h.textContent === select.options[0].textContent.replace('筛选', '')),
                             value: select.value.toLowerCase()
                         }));
 
                     const rows = Array.from(table.querySelectorAll('tr'));
                     
-                    // Skip header row
+                    // 跳过表头行
                     rows.slice(1).forEach(row => {
                         const cells = Array.from(row.querySelectorAll('td'));
                         const rowText = cells.map(cell => cell.textContent.toLowerCase()).join(' ');
                         
-                        // Check if row matches search term and all active filters
+                        // 检查是否匹配搜索词和所有激活的筛选器
                         const matchesSearch = searchTerm === '' || rowText.includes(searchTerm);
                         const matchesFilters = filterValues.every(filter => 
                             filter.value === '' || 
@@ -9829,7 +10052,7 @@
 
                         if (matchesSearch && matchesFilters) {
                             row.classList.remove('hidden');
-                            // Highlight search term
+                            // 高亮搜索词
                             if (searchTerm) {
                                 cells.forEach(cell => {
                                     const text = cell.textContent;
@@ -9847,7 +10070,16 @@
                             row.classList.add('hidden');
                         }
                     });
+
+                    // 更新统计数据
+                    updateStats();
                 }
+
+                // 监听搜索输入
+                searchInput.addEventListener('input', applyFilters);
+
+                // 初始化统计数据
+                updateStats();
             });
         </script>
     </body>
