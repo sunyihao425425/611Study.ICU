@@ -185,10 +185,74 @@ def fetch_and_convert():
                 .filter-group {{
                     min-width: 100%;
                 }}
-                th, td {{
-                    padding: 10px;
-                    font-size: 13px;
+                /* 移动端表格样式优化 */
+                .table-responsive {{
+                    margin: 10px -15px;
+                    border-radius: 0;
+                    box-shadow: none;
                 }}
+                table {{
+                    display: block;
+                }}
+                table thead {{
+                    display: none; /* 隐藏原始表头 */
+                }}
+                table tbody {{
+                    display: block;
+                }}
+                table tr {{
+                    display: block;
+                    margin-bottom: 15px;
+                    background: white;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                    border-radius: 8px;
+                }}
+                table td {{
+                    display: block;
+                    padding: 10px 15px;
+                    font-size: 14px;
+                    border: none;
+                    border-bottom: 1px solid #eee;
+                }}
+                table td:last-child {{
+                    border-bottom: none;
+                }}
+                /* 为每个单元格添加标签 */
+                table td:before {{
+                    content: attr(data-label);
+                    display: block;
+                    font-weight: bold;
+                    color: #666;
+                    font-size: 12px;
+                    margin-bottom: 4px;
+                }}
+                /* 优化关键信息显示 */
+                table td[data-label="学校名称"] {{
+                    font-size: 16px;
+                    font-weight: bold;
+                    background: #f8f9fa;
+                }}
+                table td[data-label="每周在校学习小时数"],
+                table td[data-label="24年学生自杀数"] {{
+                    color: var(--danger-color);
+                }}
+            }}
+            /* 添加表格排序样式 */
+            .sortable {{
+                cursor: pointer;
+            }}
+            .sortable:after {{
+                content: '⇅';
+                margin-left: 5px;
+                opacity: 0.5;
+            }}
+            .sortable.asc:after {{
+                content: '↑';
+                opacity: 1;
+            }}
+            .sortable.desc:after {{
+                content: '↓';
+                opacity: 1;
             }}
         </style>
     </head>
@@ -225,13 +289,18 @@ def fetch_and_convert():
                     const visibleRows = Array.from(table.querySelectorAll('tr:not(.hidden)')).slice(1);
                     const stats = {{
                         totalSchools: visibleRows.length,
-                        avgHours: Math.round(visibleRows.reduce((sum, row) => 
-                            sum + parseFloat(row.cells[6].textContent || 0), 0) / visibleRows.length || 0),
-                        totalSuicides: visibleRows.reduce((sum, row) => 
-                            sum + parseInt(row.cells[9].textContent || 0), 0),
+                        avgHours: Math.round(visibleRows.reduce((sum, row) => {{
+                            const hours = parseFloat(row.cells[6].textContent || '0');
+                            return isNaN(hours) ? sum : sum + hours;
+                        }}, 0) / visibleRows.length || 0),
+                        totalSuicides: visibleRows.reduce((sum, row) => {{
+                            const suicides = row.cells[9].textContent.trim();
+                            const num = parseInt(suicides);
+                            return isNaN(num) ? sum : sum + num;
+                        }}, 0),
                         earlyStart: visibleRows.filter(row => {{
                             const startTime = row.cells[10].textContent;
-                            return startTime && startTime.includes('05:') || startTime.includes('06:');
+                            return startTime && (startTime.includes('05:') || startTime.includes('06:'));
                         }}).length
                     }};
 
@@ -245,7 +314,7 @@ def fetch_and_convert():
                             <div class="stat-label">平均每周在校学习小时数</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-value">${{stats.totalSuicides}}</div>
+                            <div class="stat-value">${{stats.totalSuicides || 0}}</div>
                             <div class="stat-label">总自杀人数</div>
                         </div>
                         <div class="stat-card">
@@ -253,6 +322,56 @@ def fetch_and_convert():
                             <div class="stat-label">早于7点上学的学校数</div>
                         </div>
                     `;
+                }}
+
+                // 为移动端添加数据标签
+                function addMobileDataLabels() {{
+                    const rows = Array.from(table.querySelectorAll('tr'));
+                    const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent);
+                    
+                    rows.slice(1).forEach(row => {{
+                        Array.from(row.cells).forEach((cell, index) => {{
+                            cell.setAttribute('data-label', headers[index]);
+                        }});
+                    }});
+                }}
+
+                // 添加表格排序功能
+                function initTableSort() {{
+                    const headers = Array.from(table.querySelectorAll('th'));
+                    headers.forEach((header, index) => {{
+                        if (['每周在校学习小时数', '每月假期天数', '寒假放假天数', '24年学生自杀数'].includes(header.textContent)) {{
+                            header.classList.add('sortable');
+                            header.addEventListener('click', () => sortTable(index, header));
+                        }}
+                    }});
+                }}
+
+                function sortTable(columnIndex, header) {{
+                    const tbody = table.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    const isAsc = !header.classList.contains('asc');
+                    
+                    // 清除所有排序标记
+                    table.querySelectorAll('.sortable').forEach(h => {{
+                        h.classList.remove('asc', 'desc');
+                    }});
+                    
+                    // 添加新的排序标记
+                    header.classList.add(isAsc ? 'asc' : 'desc');
+                    
+                    const sortedRows = rows.sort((a, b) => {{
+                        const aValue = parseFloat(a.cells[columnIndex].textContent) || 0;
+                        const bValue = parseFloat(b.cells[columnIndex].textContent) || 0;
+                        return isAsc ? aValue - bValue : bValue - aValue;
+                    }});
+                    
+                    // 重新插入排序后的行
+                    tbody.innerHTML = '';
+                    sortedRows.forEach(row => tbody.appendChild(row));
+                    
+                    // 更新统计数据
+                    updateStats();
                 }}
 
                 // 创建筛选器组
@@ -374,8 +493,9 @@ def fetch_and_convert():
                 // 监听搜索输入
                 searchInput.addEventListener('input', applyFilters);
 
-                // 初始化统计数据
-                updateStats();
+                // 初始化
+                addMobileDataLabels();
+                initTableSort();
             }});
         </script>
     </body>
