@@ -1,6 +1,8 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
+from datetime import datetime
+import pytz
 
 # Google Sheets setup
 SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -21,14 +23,18 @@ def fetch_and_convert():
     # Convert to pandas DataFrame
     df = pd.DataFrame(data[1:], columns=data[0])
     
+    # Get current time in UTC+8
+    china_tz = pytz.timezone('Asia/Shanghai')
+    current_time = datetime.now(china_tz).strftime('%Y-%m-%d %H:%M:%S')
+    
     # Convert to HTML with styling
     html_content = f"""
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="zh-CN">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Google Sheets Data</title>
+        <title>611Study.ICU - 全国超时学习学校耻辱名单</title>
         <style>
             body {{
                 font-family: Arial, sans-serif;
@@ -62,7 +68,7 @@ def fetch_and_convert():
         </style>
     </head>
     <body>
-        <div class="last-updated">Last updated: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')} UTC</div>
+        <div class="last-updated">最后更新时间：{current_time} (UTC+8)</div>
         {df.to_html(index=False, classes='table', escape=False)}
     </body>
     </html>
