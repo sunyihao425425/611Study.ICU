@@ -85,6 +85,8 @@
                 padding: 15px;
                 text-align: left;
                 font-size: 14px;
+                white-space: normal;
+                word-break: break-word;
             }
             th {
                 background-color: #f8f9fa;
@@ -279,11 +281,16 @@
                 content: '↓';
                 opacity: 1;
             }
+            /* 学生评论列样式 */
+            td[data-label="学生的评论"] {
+                min-width: 200px;
+                max-width: 400px;
+            }
         </style>
     </head>
     <body>
         <div class="container">
-            <div class="last-updated">最后更新时间：2025-02-04 12:56:35 (UTC+8)</div>
+            <div class="last-updated">最后更新时间：2025-02-04 13:06:08 (UTC+8)</div>
             <div class="timezone-notice">注意！本站时间与原表格一致，<u>仅最后更新时间</u>为北京时间。</div>
             
             <div class="stats-container" id="totalStatsContainer">
@@ -10147,6 +10154,86 @@
       <td>0</td>
       <td></td>
     </tr>
+    <tr>
+      <td>2025-2-4 下午03:58:25</td>
+      <td>江苏</td>
+      <td>江苏省淮安市</td>
+      <td>淮安区</td>
+      <td>江苏省淮安中学</td>
+      <td>11</td>
+      <td>96</td>
+      <td>2</td>
+      <td>10</td>
+      <td>3</td>
+      <td>上午06:30:00</td>
+      <td>下午10:20:00</td>
+      <td>2000</td>
+      <td>很没人性的学校</td>
+    </tr>
+    <tr>
+      <td>2025-2-4 下午04:01:04</td>
+      <td>河北</td>
+      <td>保定市</td>
+      <td>涞水县</td>
+      <td>涞水祖冲之中学</td>
+      <td>12</td>
+      <td>105</td>
+      <td>1.5</td>
+      <td>15</td>
+      <td>0</td>
+      <td>上午05:30:00</td>
+      <td>下午11:30:00</td>
+      <td>0</td>
+      <td>涞水祖冲之中学，擅自更改开学日期，以答疑解惑的形式开学，压榨学生放假时间，有的班甚至开展网上答疑，严重影响学生休息时间，希望能够得到帮助，平时压榨放假时间就算了，就连年都不让在家过完建议严查，最可气的是这个学校还出不了成绩，所谓的成绩都是压榨学生休息时间得来的，可恶至极</td>
+    </tr>
+    <tr>
+      <td>2025-2-4 下午04:02:55</td>
+      <td>山东</td>
+      <td>枣庄市</td>
+      <td>滕州市</td>
+      <td>滕州市第一中学</td>
+      <td>12</td>
+      <td>108</td>
+      <td>27</td>
+      <td>10</td>
+      <td>4</td>
+      <td>上午06:15:00</td>
+      <td>下午09:50:00</td>
+      <td>0</td>
+      <td>畜牲</td>
+    </tr>
+    <tr>
+      <td>2025-2-4 下午04:04:09</td>
+      <td>河南</td>
+      <td>焦作市</td>
+      <td>沁阳市</td>
+      <td>沁阳市第一中学</td>
+      <td>12</td>
+      <td>115</td>
+      <td>1</td>
+      <td>6</td>
+      <td>1</td>
+      <td>上午05:40:00</td>
+      <td>上午10:20:00</td>
+      <td>0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>2025-2-4 下午04:05:01</td>
+      <td>河南</td>
+      <td>平顶山市</td>
+      <td>舞钢市</td>
+      <td>舞钢市第一高级中学</td>
+      <td>12</td>
+      <td>105</td>
+      <td>1</td>
+      <td>15</td>
+      <td>1</td>
+      <td>上午05:30:00</td>
+      <td>上午11:30:00</td>
+      <td>1000</td>
+      <td>浪费时间，教学差劲，并且管制严厉，怕担责任，教师出口成脏</td>
+    </tr>
   </tbody>
 </table>
             </div>
@@ -10360,13 +10447,18 @@
                         const cells = Array.from(row.querySelectorAll('td'));
                         const rowText = cells.map(cell => cell.textContent.toLowerCase()).join(' ');
                         
+                        // 分别检查搜索和筛选条件
                         const matchesSearch = searchTerm === '' || rowText.includes(searchTerm);
                         const matchesFilters = filterValues.every(filter => 
                             filter.value === '' || 
                             cells[filter.index].textContent.toLowerCase() === filter.value
                         );
 
-                        if (matchesSearch && matchesFilters) {
+                        // 只要满足搜索条件就显示，除非有激活的筛选条件
+                        const hasActiveFilters = filterValues.some(filter => filter.value !== '');
+                        const shouldShow = matchesSearch && (!hasActiveFilters || matchesFilters);
+
+                        if (shouldShow) {
                             row.classList.remove('hidden');
                             if (searchTerm) {
                                 cells.forEach(cell => {
@@ -10398,7 +10490,12 @@
                 // 监听搜索输入
                 searchInput.addEventListener('input', () => {
                     applyFilters();
-                    updateFilterOptions();
+                    // 只在有激活的筛选器时更新选项
+                    const hasActiveFilters = Array.from(document.querySelectorAll('.filter-select'))
+                        .some(select => select.value !== '');
+                    if (hasActiveFilters) {
+                        updateFilterOptions();
+                    }
                 });
             });
         </script>
