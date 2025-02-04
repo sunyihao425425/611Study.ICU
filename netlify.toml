@@ -1,3 +1,5 @@
 [build]
-  publish = "."
-  command = "echo 'Skipping build step'"
+  # 由于只是静态部署，这里不需要实际的构建命令
+  command = "echo 'Skip build phase, deploying static site...'"
+  # 发布目录可以设置为当前目录，如果 index.html 就在根目录下
+  publish = "." 
