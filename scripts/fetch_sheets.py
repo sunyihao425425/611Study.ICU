@@ -115,6 +115,8 @@ def fetch_and_convert():
                 padding: 15px;
                 text-align: left;
                 font-size: 14px;
+                white-space: normal;
+                word-break: break-word;
             }}
             th {{
                 background-color: #f8f9fa;
@@ -308,6 +310,11 @@ def fetch_and_convert():
             .sortable.desc:after {{
                 content: '↓';
                 opacity: 1;
+            }}
+            /* 学生评论列样式 */
+            td[data-label="学生的评论"] {{
+                min-width: 200px;
+                max-width: 400px;
             }}
         </style>
     </head>
@@ -544,13 +551,18 @@ def fetch_and_convert():
                         const cells = Array.from(row.querySelectorAll('td'));
                         const rowText = cells.map(cell => cell.textContent.toLowerCase()).join(' ');
                         
+                        // 分别检查搜索和筛选条件
                         const matchesSearch = searchTerm === '' || rowText.includes(searchTerm);
                         const matchesFilters = filterValues.every(filter => 
                             filter.value === '' || 
                             cells[filter.index].textContent.toLowerCase() === filter.value
                         );
 
-                        if (matchesSearch && matchesFilters) {{
+                        // 只要满足搜索条件就显示，除非有激活的筛选条件
+                        const hasActiveFilters = filterValues.some(filter => filter.value !== '');
+                        const shouldShow = matchesSearch && (!hasActiveFilters || matchesFilters);
+
+                        if (shouldShow) {{
                             row.classList.remove('hidden');
                             if (searchTerm) {{
                                 cells.forEach(cell => {{
@@ -582,7 +594,12 @@ def fetch_and_convert():
                 // 监听搜索输入
                 searchInput.addEventListener('input', () => {{
                     applyFilters();
-                    updateFilterOptions();
+                    // 只在有激活的筛选器时更新选项
+                    const hasActiveFilters = Array.from(document.querySelectorAll('.filter-select'))
+                        .some(select => select.value !== '');
+                    if (hasActiveFilters) {{
+                        updateFilterOptions();
+                    }}
                 }});
             }});
         </script>
