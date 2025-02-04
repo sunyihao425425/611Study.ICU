@@ -351,73 +351,20 @@ def fetch_and_convert():
                 const totalStatsContainer = document.getElementById('totalStatsContainer');
                 const filteredStatsContainer = document.getElementById('filteredStatsContainer');
                 
+                // 创建筛选器组
+                const headers = Array.from(table.querySelectorAll('th'));
+                const originalRows = Array.from(table.querySelectorAll('tr')).slice(1);
+                let currentSearchTerm = '';
+                
                 // 存储所有选项的原始数据
                 const originalOptions = {{}};
                 
-                // 创建统计数据
-                function createStatsHtml(stats, filtered = false) {{
-                    return `
-                        <div class="stat-card">
-                            <div class="stat-value">${{stats.totalSchools}}</div>
-                            <div class="stat-label">${{filtered ? '符合条件' : '总'}}学校数量</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value">${{stats.avgHours}}</div>
-                            <div class="stat-label">平均每周在校学习小时数</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value">${{stats.totalSuicides || 0}}</div>
-                            <div class="stat-label">总自杀人数</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value">${{stats.earlyStart}}</div>
-                            <div class="stat-label">早于7点上学的学校数</div>
-                        </div>
-                    `;
-                }}
-
-                function calculateStats(rows) {{
-                    return {{
-                        totalSchools: rows.length,
-                        avgHours: Math.round(rows.reduce((sum, row) => {{
-                            const hours = parseFloat(row.cells[6].textContent || '0');
-                            return isNaN(hours) ? sum : sum + hours;
-                        }}, 0) / rows.length || 0),
-                        totalSuicides: rows.reduce((sum, row) => {{
-                            const suicides = row.cells[9].textContent.trim();
-                            const num = parseInt(suicides);
-                            return isNaN(num) ? sum : sum + num;
-                        }}, 0),
-                        earlyStart: rows.filter(row => {{
-                            const startTime = row.cells[10].textContent;
-                            return startTime && (startTime.includes('05:') || startTime.includes('06:'));
-                        }}).length
-                    }};
-                }}
-
-                // 初始化总体统计
-                function initTotalStats() {{
-                    const allRows = Array.from(table.querySelectorAll('tr')).slice(1);
-                    const totalStats = calculateStats(allRows);
-                    totalStatsContainer.innerHTML = createStatsHtml(totalStats, false);
-                }}
-
-                // 更新筛选后的统计
-                function updateFilteredStats() {{
-                    const visibleRows = Array.from(table.querySelectorAll('tr:not(.hidden)')).slice(1);
-                    const filteredStats = calculateStats(visibleRows);
-                    filteredStatsContainer.innerHTML = createStatsHtml(filteredStats, true);
-                }}
-
-                // 创建筛选器组
-                const headers = Array.from(table.querySelectorAll('th'));
                 headers.forEach((header, index) => {{
                     if (['省份', '城市', '区县', '年级'].includes(header.textContent)) {{
                         const values = new Set();
                         Array.from(table.querySelectorAll(`td:nth-child(${{index + 1}})`))
                             .forEach(cell => values.add(cell.textContent.trim()));
                         
-                        // 存储原始选项
                         originalOptions[header.textContent] = Array.from(values).sort();
 
                         const filterGroup = document.createElement('div');
@@ -433,8 +380,7 @@ def fetch_and_convert():
                         `;
                         
                         select.addEventListener('change', () => {{
-                            applyFilters();
-                            updateFilterOptions();
+                            applyFiltersAndSearch();
                         }});
                         
                         filterGroup.appendChild(select);
@@ -442,165 +388,99 @@ def fetch_and_convert():
                     }}
                 }});
 
-                // 更新筛选器选项
-                function updateFilterOptions() {{
-                    const filters = Array.from(document.querySelectorAll('.filter-select'));
-                    const activeFilters = filters.map(select => ({{
-                        name: select.options[0].textContent.replace('筛选', ''),
-                        value: select.value.toLowerCase()
-                    }}));
+                // 搜索函数
+                function searchRows(rows, term) {{
+                    if (!term) return rows;
+                    
+                    return rows.filter(row => {{
+                        const cells = Array.from(row.querySelectorAll('td'));
+                        const rowText = cells.map(cell => cell.textContent.toLowerCase()).join(' ');
+                        return rowText.includes(term.toLowerCase());
+                    }});
+                }}
 
-                    // 获取符合当前筛选条件的行
-                    const visibleRows = Array.from(table.querySelectorAll('tr')).slice(1)
-                        .filter(row => {{
-                            const cells = Array.from(row.cells);
-                            return activeFilters.every(filter => {{
-                                if (!filter.value) return true;
-                                const cellIndex = headers.findIndex(h => h.textContent === filter.name);
-                                return cells[cellIndex].textContent.toLowerCase() === filter.value;
+                // 筛选函数
+                function filterRows(rows) {{
+                    const filterValues = Array.from(document.querySelectorAll('.filter-select'))
+                        .map(select => ({{
+                            name: select.options[0].textContent.replace('筛选', ''),
+                            value: select.value
+                        }}))
+                        .filter(filter => filter.value !== '');
+
+                    if (filterValues.length === 0) return rows;
+
+                    return rows.filter(row => {{
+                        const cells = Array.from(row.querySelectorAll('td'));
+                        return filterValues.every(filter => {{
+                            const cellIndex = headers.findIndex(h => h.textContent === filter.name);
+                            return cells[cellIndex].textContent === filter.value;
+                        }});
+                    }});
+                }}
+
+                // 高亮搜索结果
+                function highlightSearchTerm(rows, term) {{
+                    if (!term) {{
+                        rows.forEach(row => {{
+                            const cells = Array.from(row.querySelectorAll('td'));
+                            cells.forEach(cell => {{
+                                cell.innerHTML = cell.textContent;
                             }});
                         }});
+                        return;
+                    }}
 
-                    // 更新每个筛选器的选项
-                    filters.forEach(select => {{
-                        const filterName = select.options[0].textContent.replace('筛选', '');
-                        const currentValue = select.value;
-                        const cellIndex = headers.findIndex(h => h.textContent === filterName);
-                        
-                        // 如果当前筛选器有值，使用原始选项
-                        if (currentValue) {{
-                            select.innerHTML = `
-                                <option value="">筛选${{filterName}}</option>
-                                ${{originalOptions[filterName].map(value => 
-                                    `<option value="${{value}}" ${{value === currentValue ? 'selected' : ''}}>${{value}}</option>`
-                                ).join('')}}
-                            `;
-                            return;
-                        }}
-
-                        // 收集可用的选项
-                        const availableValues = new Set();
-                        visibleRows.forEach(row => {{
-                            availableValues.add(row.cells[cellIndex].textContent.trim());
-                        }});
-
-                        select.innerHTML = `
-                            <option value="">筛选${{filterName}}</option>
-                            ${{Array.from(availableValues).sort().map(value => 
-                                `<option value="${{value}}">${{value}}</option>`
-                            ).join('')}}
-                        `;
-                    }});
-                }}
-
-                // 为移动端添加展开/收起功能
-                function addExpandButtons() {{
-                    const rows = Array.from(table.querySelectorAll('tr')).slice(1);
                     rows.forEach(row => {{
-                        // 创建展开按钮
-                        const expandBtn = document.createElement('button');
-                        expandBtn.className = 'expand-btn';
-                        expandBtn.textContent = '展开详情';
-                        expandBtn.onclick = function(e) {{
-                            e.stopPropagation();
-                            const isExpanded = row.classList.toggle('expanded');
-                            this.textContent = isExpanded ? '收起' : '展开详情';
-                        }};
-                        
-                        // 添加按钮到行
-                        if (!row.querySelector('.expand-btn')) {{
-                            row.appendChild(expandBtn);
-                        }}
-                        
-                        // 添加行点击事件
-                        row.style.cursor = 'pointer';
-                        row.onclick = function() {{
-                            const isExpanded = this.classList.toggle('expanded');
-                            const btn = this.querySelector('.expand-btn');
-                            if (btn) {{
-                                btn.textContent = isExpanded ? '收起' : '展开详情';
-                            }}
-                        }};
+                        const cells = Array.from(row.querySelectorAll('td'));
+                        cells.forEach(cell => {{
+                            const text = cell.textContent;
+                            const regex = new RegExp(term, 'gi');
+                            cell.innerHTML = text.replace(regex, match => 
+                                `<span class="highlight">${{match}}</span>`
+                            );
+                        }});
                     }});
                 }}
 
-                // 为移动端添加数据标签
-                function addMobileDataLabels() {{
-                    const rows = Array.from(table.querySelectorAll('tr'));
-                    const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent);
+                // 更新表格显示
+                function updateTableDisplay(visibleRows) {{
+                    // 隐藏所有行
+                    originalRows.forEach(row => row.classList.add('hidden'));
                     
-                    rows.slice(1).forEach(row => {{
-                        Array.from(row.cells).forEach((cell, index) => {{
-                            cell.setAttribute('data-label', headers[index]);
-                        }});
-                    }});
+                    // 显示可见行
+                    visibleRows.forEach(row => row.classList.remove('hidden'));
+                    
+                    // 更新统计
+                    updateFilteredStats();
                 }}
 
                 // 应用筛选和搜索
-                function applyFilters() {{
-                    const searchTerm = searchInput.value.toLowerCase();
-                    const filterValues = Array.from(document.querySelectorAll('.filter-select'))
-                        .map(select => ({{
-                            index: headers.findIndex(h => h.textContent === select.options[0].textContent.replace('筛选', '')),
-                            value: select.value.toLowerCase()
-                        }}));
-
-                    const rows = Array.from(table.querySelectorAll('tr'));
+                function applyFiltersAndSearch() {{
+                    // 第一步：应用搜索
+                    let visibleRows = searchRows(originalRows, currentSearchTerm);
                     
-                    rows.slice(1).forEach(row => {{
-                        const cells = Array.from(row.querySelectorAll('td'));
-                        const rowText = cells.map(cell => cell.textContent.toLowerCase()).join(' ');
-                        
-                        // 分别检查搜索和筛选条件
-                        const matchesSearch = searchTerm === '' || rowText.includes(searchTerm);
-                        const matchesFilters = filterValues.every(filter => 
-                            filter.value === '' || 
-                            cells[filter.index].textContent.toLowerCase() === filter.value
-                        );
-
-                        // 只要满足搜索条件就显示，除非有激活的筛选条件
-                        const hasActiveFilters = filterValues.some(filter => filter.value !== '');
-                        const shouldShow = matchesSearch && (!hasActiveFilters || matchesFilters);
-
-                        if (shouldShow) {{
-                            row.classList.remove('hidden');
-                            if (searchTerm) {{
-                                cells.forEach(cell => {{
-                                    const text = cell.textContent;
-                                    const regex = new RegExp(searchTerm, 'gi');
-                                    cell.innerHTML = text.replace(regex, match => 
-                                        `<span class="highlight">${{match}}</span>`
-                                    );
-                                }});
-                            }} else {{
-                                cells.forEach(cell => {{
-                                    cell.innerHTML = cell.textContent;
-                                }});
-                            }}
-                        }} else {{
-                            row.classList.add('hidden');
-                        }}
-                    }});
-
-                    updateFilteredStats();
+                    // 第二步：应用筛选
+                    visibleRows = filterRows(visibleRows);
+                    
+                    // 第三步：更新显示
+                    updateTableDisplay(visibleRows);
+                    
+                    // 第四步：高亮搜索词
+                    highlightSearchTerm(visibleRows, currentSearchTerm);
                 }}
+
+                // 监听搜索输入
+                searchInput.addEventListener('input', (e) => {{
+                    currentSearchTerm = e.target.value;
+                    applyFiltersAndSearch();
+                }});
 
                 // 初始化
                 initTotalStats();
                 addExpandButtons();
                 addMobileDataLabels();
                 initTableSort();
-
-                // 监听搜索输入
-                searchInput.addEventListener('input', () => {{
-                    applyFilters();
-                    // 只在有激活的筛选器时更新选项
-                    const hasActiveFilters = Array.from(document.querySelectorAll('.filter-select'))
-                        .some(select => select.value !== '');
-                    if (hasActiveFilters) {{
-                        updateFilterOptions();
-                    }}
-                }});
             }});
         </script>
     </body>
