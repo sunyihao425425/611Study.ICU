@@ -18,8 +18,17 @@ def convert_timestamp(timestamp_str):
         
         # 将时间字符串解析为datetime对象
         dt = pd.to_datetime(timestamp_str, format='%Y-%m-%d %p%I:%M:%S')
-        return dt.strftime('%Y-%m-%d %H:%M:%S')
-    except:
+        
+        # 设置为 UTC 时间
+        utc_dt = dt.tz_localize('UTC')
+        
+        # 转换为北京时间 (UTC+8)
+        china_tz = pytz.timezone('Asia/Shanghai')
+        china_dt = utc_dt.tz_convert(china_tz)
+        
+        return china_dt.strftime('%Y-%m-%d %H:%M:%S')
+    except Exception as e:
+        print(f"Error converting timestamp {timestamp_str}: {str(e)}")
         return timestamp_str
 
 def fetch_and_convert():
