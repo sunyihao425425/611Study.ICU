@@ -44,25 +44,15 @@
 1. **安装 Pull App:**  访问 [Pull](https://github.com/apps/pull) 并安装到你的 fork 仓库。
 2. **Pull App 将自动同步:** Pull App 会自动检测上游仓库的更新，并同步到你的仓库。
 
-**方案二：配置你自己的 Google Sheets API Key 并启用 GitHub Actions (高级)**
+**方案二：启用 GitHub Actions**
 
-如果你希望完全掌控数据更新，或者需要更精细的定制，可以配置自己的 Google Sheets API Key。
+如果你希望完全掌控数据更新，可以启用 GitHub Actions：
 
-1. **创建 Google Cloud Project 并启用 Google Sheets API**
-   - 访问 [Google Cloud Console](https://console.cloud.google.com/)
-   - 创建新项目或选择现有项目
-   - 启用 Google Sheets API
-2. **创建服务账号并下载 JSON 密钥文件**
-3. **在 GitHub 仓库中设置 Secret**
-   - 打开你的 GitHub 仓库设置
-   - 进入 "Secrets and variables" > "Actions"
-   - 创建一个名为 `GOOGLE_SERVICE_ACCOUNT` 的新 secret
-   - 将服务账号 JSON 密钥文件的内容复制粘贴到这个 secret 中
-4. **检查 Actions 权限：**
-   - 转到仓库的 Settings > Actions > General
-   - 确保 "Workflow permissions" 设置为 "Read and write permissions"
+1. **转到仓库的 Settings > Actions > General**
+2. **确保 "Workflow permissions" 设置为 "Read and write permissions"**
+3. **在 Actions 标签页中启用 Workflows**
 
-配置完成后，GitHub Actions 将会使用你自己的 API Key 定时更新数据。
+配置完成后，GitHub Actions 将会每30分钟自动更新数据。
 
 ## License
 

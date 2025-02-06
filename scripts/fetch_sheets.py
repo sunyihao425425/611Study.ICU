@@ -1,27 +1,18 @@
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
 from datetime import datetime
 import pytz
+import subprocess
+import os
 
-# Google Sheets setup
-SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1P48quxwMv9XsYQhXjLOvTRRq8tt3ahJnkbXo4VCxjLc/edit?gid=1615412834'
+# CSV download URL
+CSV_URL = 'https://docs.google.com/spreadsheets/d/1P48quxwMv9XsYQhXjLOvTRRq8tt3ahJnkbXo4VCxjLc/export?format=csv'
 
 def fetch_and_convert():
-    # Authenticate with Google
-    credentials = ServiceAccountCredentials.from_json_keyfile_name('service_account.json', SCOPE)
-    client = gspread.authorize(credentials)
+    # Download CSV file using wget
+    subprocess.run(['wget', '-q', CSV_URL, '-O', 'data.csv'], check=True)
     
-    # Open the spreadsheet
-    spreadsheet = client.open_by_url(SPREADSHEET_URL)
-    worksheet = spreadsheet.get_worksheet(0)  # Get first worksheet
-    
-    # Get all values
-    data = worksheet.get_all_values()
-    
-    # Convert to pandas DataFrame
-    df = pd.DataFrame(data[1:], columns=data[0])
+    # Read CSV file
+    df = pd.read_csv('data.csv')
     
     # Get current time in UTC+8
     china_tz = pytz.timezone('Asia/Shanghai')
@@ -627,4 +618,7 @@ def fetch_and_convert():
         f.write(html_content)
 
 if __name__ == '__main__':
-    fetch_and_convert() 
+    fetch_and_convert()
+    # Clean up CSV file after conversion
+    if os.path.exists('data.csv'):
+        os.remove('data.csv') 
