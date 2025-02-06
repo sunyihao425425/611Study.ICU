@@ -224,7 +224,7 @@ def fetch_and_convert():
                     border-bottom: 1px solid #eee;
                 }}
                 /* 默认显示的重要信息 */
-                table td[data-label="时间戳记"],
+                table td[data-label="填写时间"],
                 table td[data-label="省份"],
                 table td[data-label="城市"],
                 table td[data-label="学校名称"],
@@ -259,7 +259,7 @@ def fetch_and_convert():
                     display: block;
                 }}
                 /* 优化关键信息显示 */
-                table td[data-label="时间戳记"] {{
+                table td[data-label="填写时间"] {{
                     font-weight: 500;
                     background: #f8f9fa;
                     color: var(--primary-color);
@@ -352,7 +352,7 @@ def fetch_and_convert():
                 <table>
                     <thead>
                         <tr>
-                            <th>时间戳记</th>
+                            <th>填写时间</th>
                             <th>省份</th>
                             <th>城市</th>
                             <th>区县</th>
@@ -381,7 +381,7 @@ def fetch_and_convert():
         
         html_content += f"""
         <tr>
-            <td class="time-cell">{row['时间戳记']}</td>
+            <td class="time-cell">{row['填写时间']}</td>
             <td>{row['省份']}</td>
             <td>{row['城市']}</td>
             <td>{row['区县']}</td>
