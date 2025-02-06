@@ -157,15 +157,30 @@ def fetch_and_convert():
                 padding: 20px;
                 border-radius: 8px;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
             }}
             .stat-value {{
                 font-size: 24px;
                 font-weight: bold;
                 color: var(--primary-color);
+                margin-bottom: 8px;
             }}
             .stat-label {{
                 color: #666;
                 font-size: 14px;
+            }}
+            .comment-cell {{
+                max-width: 300px;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }}
+            .time-cell {{
+                white-space: nowrap;
+            }}
+            .fee-cell {{
+                text-align: right;
             }}
             @media (max-width: 768px) {{
                 .controls {{
@@ -214,7 +229,10 @@ def fetch_and_convert():
                 table td[data-label="城市"],
                 table td[data-label="学校名称"],
                 table td[data-label="每周在校学习小时数"],
-                table td[data-label="24年学生自杀数"] {{
+                table td[data-label="24年学生自杀数"],
+                table td[data-label="放学时间"],
+                table td[data-label="寒假补课收费总价格"],
+                table td[data-label="学生的评论"] {{
                     display: block;
                 }}
                 /* 展开/收起按钮 */
@@ -311,31 +329,83 @@ def fetch_and_convert():
     </head>
     <body>
         <div class="container">
-            <div class="last-updated">最后更新时间：{current_time} (UTC+8)</div>
-            <div class="timezone-notice">注意！本站时间与原表格一致，<u>仅最后更新时间</u>为北京时间。</div>
-            
-            <div class="stats-container" id="totalStatsContainer">
-                <!-- 总体统计数据将在这里显示 -->
-            </div>
+            <h1>611Study.ICU - 全国超时学习学校耻辱名单</h1>
+            <p class="last-updated">最后更新时间：{current_time} (UTC+8)</p>
+            <p class="timezone-notice">⚠️ 注意：所有时间均为24小时制</p>
             
             <div class="controls">
-                <input type="text" class="search-box" placeholder="输入关键词进行搜索..." id="searchInput">
+                <input type="text" id="searchInput" class="search-box" placeholder="搜索学校、地区或其他信息...">
                 <div class="filter-container" id="filterContainer">
-                    <!-- 筛选下拉框将通过JavaScript动态添加 -->
+                    <!-- 筛选器将通过JavaScript动态生成 -->
                 </div>
             </div>
 
+            <div class="stats-container" id="totalStatsContainer">
+                <!-- 总体统计将通过JavaScript动态生成 -->
+            </div>
+
             <div class="stats-container" id="filteredStatsContainer">
-                <!-- 筛选后的统计数据将在这里显示 -->
+                <!-- 筛选后统计将通过JavaScript动态生成 -->
             </div>
 
             <div class="table-responsive">
-                {df.to_html(index=False, classes='table', escape=False)}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>时间戳记</th>
+                            <th>省份</th>
+                            <th>城市</th>
+                            <th>区县</th>
+                            <th>学校名称</th>
+                            <th>年级</th>
+                            <th class="sortable">每周在校学习小时数</th>
+                            <th class="sortable">每月假期天数</th>
+                            <th class="sortable">寒假放假天数</th>
+                            <th class="sortable">24年学生自杀数</th>
+                            <th>上学时间</th>
+                            <th>放学时间</th>
+                            <th class="sortable">寒假补课收费总价格</th>
+                            <th>学生的评论</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+"""
+
+    # Process each row
+    for _, row in df.iterrows():
+        # Format times
+        start_time = row.get('上学时间', '')
+        end_time = row.get('放学时间', '')
+        fee = row.get('寒假补课收费总价格', 0)
+        comment = row.get('学生的评论', '')
+        
+        html_content += f"""
+        <tr>
+            <td class="time-cell">{row['时间戳记']}</td>
+            <td>{row['省份']}</td>
+            <td>{row['城市']}</td>
+            <td>{row['区县']}</td>
+            <td>{row['学校名称']}</td>
+            <td>{row['年级']}</td>
+            <td>{row['每周在校学习小时数']}</td>
+            <td>{row['每月假期天数']}</td>
+            <td>{row['寒假放假天数']}</td>
+            <td>{row['24年学生自杀数']}</td>
+            <td class="time-cell">{start_time}</td>
+            <td class="time-cell">{end_time}</td>
+            <td class="fee-cell">{fee if pd.notna(fee) else '0'}</td>
+            <td class="comment-cell">{comment if pd.notna(comment) else ''}</td>
+        </tr>
+"""
+
+    html_content += """
+                    </tbody>
+                </table>
             </div>
         </div>
 
         <script>
-            document.addEventListener('DOMContentLoaded', function() {{
+            document.addEventListener('DOMContentLoaded', function() {
                 const table = document.querySelector('table');
                 const searchInput = document.getElementById('searchInput');
                 const filterContainer = document.getElementById('filterContainer');
@@ -348,12 +418,12 @@ def fetch_and_convert():
                 let currentSearchTerm = '';
                 
                 // 存储所有选项的原始数据
-                const originalOptions = {{}};
+                const originalOptions = {};
                 
-                headers.forEach((header, index) => {{
-                    if (['省份', '城市', '区县', '年级'].includes(header.textContent)) {{
+                headers.forEach((header, index) => {
+                    if (['省份', '城市', '区县', '年级'].includes(header.textContent)) {
                         const values = new Set();
-                        Array.from(table.querySelectorAll(`td:nth-child(${{index + 1}})`))
+                        Array.from(table.querySelectorAll(`td:nth-child(${index + 1})`))
                             .forEach(cell => values.add(cell.textContent.trim()));
                         
                         originalOptions[header.textContent] = Array.from(values).sort();
@@ -364,34 +434,34 @@ def fetch_and_convert():
                         const select = document.createElement('select');
                         select.className = 'filter-select';
                         select.innerHTML = `
-                            <option value="">筛选${{header.textContent}}</option>
+                            <option value="">筛选${header.textContent}</option>
                             ${{originalOptions[header.textContent].map(value => 
-                                `<option value="${{value}}">${{value}}</option>`
+                                `<option value="${value}">${value}</option>`
                             ).join('')}}
                         `;
                         
-                        select.addEventListener('change', () => {{
+                        select.addEventListener('change', () => {
                             applyFiltersAndSearch();
-                        }});
+                        });
                         
                         filterGroup.appendChild(select);
                         filterContainer.appendChild(filterGroup);
-                    }}
-                }});
+                    }
+                });
 
                 // 搜索函数
-                function searchRows(rows, term) {{
+                function searchRows(rows, term) {
                     if (!term) return rows;
                     
-                    return rows.filter(row => {{
+                    return rows.filter(row => {
                         const cells = Array.from(row.querySelectorAll('td'));
                         const rowText = cells.map(cell => cell.textContent.toLowerCase()).join(' ');
                         return rowText.includes(term.toLowerCase());
-                    }});
-                }}
+                    });
+                }
 
                 // 筛选函数
-                function filterRows(rows) {{
+                function filterRows(rows) {
                     const filterValues = Array.from(document.querySelectorAll('.filter-select'))
                         .map(select => ({{
                             name: select.options[0].textContent.replace('筛选', ''),
@@ -401,41 +471,41 @@ def fetch_and_convert():
 
                     if (filterValues.length === 0) return rows;
 
-                    return rows.filter(row => {{
+                    return rows.filter(row => {
                         const cells = Array.from(row.querySelectorAll('td'));
-                        return filterValues.every(filter => {{
+                        return filterValues.every(filter => {
                             const cellIndex = headers.findIndex(h => h.textContent === filter.name);
                             return cells[cellIndex].textContent === filter.value;
-                        }});
-                    }});
-                }}
+                        });
+                    });
+                }
 
                 // 高亮搜索结果
-                function highlightSearchTerm(rows, term) {{
-                    if (!term) {{
-                        rows.forEach(row => {{
+                function highlightSearchTerm(rows, term) {
+                    if (!term) {
+                        rows.forEach(row => {
                             const cells = Array.from(row.querySelectorAll('td'));
-                            cells.forEach(cell => {{
+                            cells.forEach(cell => {
                                 cell.innerHTML = cell.textContent;
-                            }});
-                        }});
+                            });
+                        });
                         return;
-                    }}
+                    }
 
-                    rows.forEach(row => {{
+                    rows.forEach(row => {
                         const cells = Array.from(row.querySelectorAll('td'));
-                        cells.forEach(cell => {{
+                        cells.forEach(cell => {
                             const text = cell.textContent;
                             const regex = new RegExp(term, 'gi');
                             cell.innerHTML = text.replace(regex, match => 
-                                `<span class="highlight">${{match}}</span>`
+                                `<span class="highlight">${match}</span>`
                             );
-                        }});
-                    }});
-                }}
+                        });
+                    });
+                }
 
                 // 更新表格显示
-                function updateTableDisplay(visibleRows) {{
+                function updateTableDisplay(visibleRows) {
                     // 隐藏所有行
                     originalRows.forEach(row => row.classList.add('hidden'));
                     
@@ -444,10 +514,10 @@ def fetch_and_convert():
                     
                     // 更新统计
                     updateFilteredStats();
-                }}
+                }
 
                 // 应用筛选和搜索
-                function applyFiltersAndSearch() {{
+                function applyFiltersAndSearch() {
                     // 第一步：应用搜索
                     let visibleRows = searchRows(originalRows, currentSearchTerm);
                     
@@ -459,37 +529,16 @@ def fetch_and_convert():
                     
                     // 第四步：高亮搜索词
                     highlightSearchTerm(visibleRows, currentSearchTerm);
-                }}
+                }
 
                 // 监听搜索输入
-                searchInput.addEventListener('input', (e) => {{
+                searchInput.addEventListener('input', (e) => {
                     currentSearchTerm = e.target.value;
                     applyFiltersAndSearch();
-                }});
+                });
 
-                // 创建统计数据
-                function createStatsHtml(stats, filtered = false) {{
-                    return `
-                        <div class="stat-card">
-                            <div class="stat-value">${{stats.totalSchools}}</div>
-                            <div class="stat-label">${{filtered ? '符合条件' : '总'}}学校数量</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value">${{stats.avgHours}}</div>
-                            <div class="stat-label">平均每周在校学习小时数</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value">${{stats.totalSuicides || 0}}</div>
-                            <div class="stat-label">总自杀人数</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value">${{stats.earlyStart}}</div>
-                            <div class="stat-label">早于7点上学的学校数</div>
-                        </div>
-                    `;
-                }}
-
-                function calculateStats(rows) {{
+                // 计算统计数据
+                function calculateStats(rows) {
                     return {{
                         totalSchools: rows.length,
                         avgHours: Math.round(rows.reduce((sum, row) => {{
@@ -501,98 +550,135 @@ def fetch_and_convert():
                             const num = parseInt(suicides);
                             return isNaN(num) ? sum : sum + num;
                         }}, 0),
+                        avgFee: Math.round(rows.reduce((sum, row) => {{
+                            const fee = parseFloat(row.cells[12].textContent || '0');
+                            return isNaN(fee) ? sum : sum + fee;
+                        }}, 0) / rows.length || 0),
                         earlyStart: rows.filter(row => {{
                             const startTime = row.cells[10].textContent;
                             return startTime && (startTime.includes('05:') || startTime.includes('06:'));
+                        }}).length,
+                        lateEnd: rows.filter(row => {{
+                            const endTime = row.cells[11].textContent;
+                            return endTime && (endTime.includes('21:') || endTime.includes('22:') || endTime.includes('23:'));
                         }}).length
                     }};
-                }}
+                }
+
+                function createStatsHtml(stats, isFiltered) {
+                    return `
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.totalSchools}</div>
+                            <div class="stat-label">${isFiltered ? '筛选后学校数' : '总学校数'}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.avgHours}</div>
+                            <div class="stat-label">平均每周学习小时数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.totalSuicides}</div>
+                            <div class="stat-label">2024年学生自杀总数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.avgFee}</div>
+                            <div class="stat-label">平均寒假补课费用</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.earlyStart}</div>
+                            <div class="stat-label">早于7点上学的学校数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.lateEnd}</div>
+                            <div class="stat-label">晚于9点放学的学校数</div>
+                        </div>
+                    `;
+                }
 
                 // 初始化总体统计
-                function initTotalStats() {{
+                function initTotalStats() {
                     const totalStats = calculateStats(originalRows);
                     totalStatsContainer.innerHTML = createStatsHtml(totalStats, false);
-                }}
+                }
 
                 // 更新筛选后的统计
-                function updateFilteredStats() {{
+                function updateFilteredStats() {
                     const visibleRows = Array.from(table.querySelectorAll('tr:not(.hidden)')).slice(1);
                     const filteredStats = calculateStats(visibleRows);
                     filteredStatsContainer.innerHTML = createStatsHtml(filteredStats, true);
-                }}
+                }
 
                 // 为移动端添加数据标签
-                function addMobileDataLabels() {{
+                function addMobileDataLabels() {
                     const rows = Array.from(table.querySelectorAll('tr'));
                     const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent);
                     
-                    rows.slice(1).forEach(row => {{
-                        Array.from(row.cells).forEach((cell, index) => {{
+                    rows.slice(1).forEach(row => {
+                        Array.from(row.cells).forEach((cell, index) => {
                             cell.setAttribute('data-label', headers[index]);
-                        }});
-                    }});
-                }}
+                        });
+                    });
+                }
 
                 // 为移动端添加展开/收起功能
-                function addExpandButtons() {{
+                function addExpandButtons() {
                     const rows = Array.from(table.querySelectorAll('tr')).slice(1);
-                    rows.forEach(row => {{
+                    rows.forEach(row => {
                         // 创建展开按钮
                         const expandBtn = document.createElement('button');
                         expandBtn.className = 'expand-btn';
                         expandBtn.textContent = '展开详情';
-                        expandBtn.onclick = function(e) {{
+                        expandBtn.onclick = function(e) {
                             e.stopPropagation();
                             const isExpanded = row.classList.toggle('expanded');
                             this.textContent = isExpanded ? '收起' : '展开详情';
-                        }};
+                        };
                         
                         // 添加按钮到行
-                        if (!row.querySelector('.expand-btn')) {{
+                        if (!row.querySelector('.expand-btn')) {
                             row.appendChild(expandBtn);
-                        }}
+                        }
                         
                         // 添加行点击事件
                         row.style.cursor = 'pointer';
-                        row.onclick = function() {{
+                        row.onclick = function() {
                             const isExpanded = this.classList.toggle('expanded');
                             const btn = this.querySelector('.expand-btn');
-                            if (btn) {{
+                            if (btn) {
                                 btn.textContent = isExpanded ? '收起' : '展开详情';
-                            }}
-                        }};
-                    }});
-                }}
+                            }
+                        };
+                    });
+                }
 
                 // 添加表格排序功能
-                function initTableSort() {{
+                function initTableSort() {
                     const headers = Array.from(table.querySelectorAll('th'));
-                    headers.forEach((header, index) => {{
-                        if (['每周在校学习小时数', '每月假期天数', '寒假放假天数', '24年学生自杀数'].includes(header.textContent)) {{
+                    headers.forEach((header, index) => {
+                        if (['每周在校学习小时数', '每月假期天数', '寒假放假天数', '24年学生自杀数'].includes(header.textContent)) {
                             header.classList.add('sortable');
                             header.addEventListener('click', () => sortTable(index, header));
-                        }}
-                    }});
-                }}
+                        }
+                    });
+                }
 
-                function sortTable(columnIndex, header) {{
+                function sortTable(columnIndex, header) {
                     const tbody = table.querySelector('tbody');
                     const rows = Array.from(tbody.querySelectorAll('tr'));
                     const isAsc = !header.classList.contains('asc');
                     
                     // 清除所有排序标记
-                    table.querySelectorAll('.sortable').forEach(h => {{
+                    table.querySelectorAll('.sortable').forEach(h => {
                         h.classList.remove('asc', 'desc');
-                    }});
+                    });
                     
                     // 添加新的排序标记
                     header.classList.add(isAsc ? 'asc' : 'desc');
                     
-                    const sortedRows = rows.sort((a, b) => {{
+                    const sortedRows = rows.sort((a, b) => {
                         const aValue = parseFloat(a.cells[columnIndex].textContent) || 0;
                         const bValue = parseFloat(b.cells[columnIndex].textContent) || 0;
                         return isAsc ? aValue - bValue : bValue - aValue;
-                    }});
+                    });
                     
                     // 重新插入排序后的行
                     tbody.innerHTML = '';
@@ -600,20 +686,20 @@ def fetch_and_convert():
                     
                     // 更新统计数据
                     updateFilteredStats();
-                }}
+                }
 
                 // 初始化
                 initTotalStats();
                 addExpandButtons();
                 addMobileDataLabels();
                 initTableSort();
-            }});
+            });
         </script>
     </body>
     </html>
-    """
-    
-    # Save to index.html
+"""
+
+    # Write the HTML file
     with open('index.html', 'w', encoding='utf-8') as f:
         f.write(html_content)
 
