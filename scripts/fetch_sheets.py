@@ -12,21 +12,29 @@ def fetch_and_convert():
     # Authenticate with Google
     credentials = ServiceAccountCredentials.from_json_keyfile_name('service_account.json', SCOPE)
     client = gspread.authorize(credentials)
-    
+
     # Open the spreadsheet
     spreadsheet = client.open_by_url(SPREADSHEET_URL)
     worksheet = spreadsheet.get_worksheet(0)  # Get first worksheet
-    
+
     # Get all values
     data = worksheet.get_all_values()
-    
+
     # Convert to pandas DataFrame
     df = pd.DataFrame(data[1:], columns=data[0])
-    
+
+    # Rename columns to be more script-friendly (replace spaces and special chars with underscores, ensure no leading/trailing spaces)
+    df.columns = ["timestamp", "province", "city", "district", "school_name", "grade", "class_hour_daily",
+                  "monthly_holiday_days", "yearly_holiday_days", "suicides_number_24", "students_comment",
+                  "start_time", "end_time", "tuition_fee", "column_1_repeat"]
+
+    # Calculate 'Weekly Study Hours'
+    df['weekly_study_hours'] = pd.to_numeric(df['class_hour_daily'], errors='coerce') * 5  # Assuming 5 school days a week. Adjust if needed.
+
     # Get current time in UTC+8
     china_tz = pytz.timezone('Asia/Shanghai')
     current_time = datetime.now(china_tz).strftime('%Y-%m-%d %H:%M:%S')
-    
+
     # Convert to HTML with styling
     html_content = f"""
     <!DOCTYPE html>
@@ -312,7 +320,7 @@ def fetch_and_convert():
                 opacity: 1;
             }}
             /* 学生评论列样式 */
-            td[data-label="学生的评论"] {{
+            td[data-label="students_comment"] {{
                 min-width: 200px;
                 max-width: 400px;
             }}
@@ -322,11 +330,11 @@ def fetch_and_convert():
         <div class="container">
             <div class="last-updated">最后更新时间：{current_time} (UTC+8)</div>
             <div class="timezone-notice">注意！本站时间与原表格一致，<u>仅最后更新时间</u>为北京时间。</div>
-            
+
             <div class="stats-container" id="totalStatsContainer">
                 <!-- 总体统计数据将在这里显示 -->
             </div>
-            
+
             <div class="controls">
                 <input type="text" class="search-box" placeholder="输入关键词进行搜索..." id="searchInput">
                 <div class="filter-container" id="filterContainer">
@@ -350,39 +358,39 @@ def fetch_and_convert():
                 const filterContainer = document.getElementById('filterContainer');
                 const totalStatsContainer = document.getElementById('totalStatsContainer');
                 const filteredStatsContainer = document.getElementById('filteredStatsContainer');
-                
+
                 // 创建筛选器组
                 const headers = Array.from(table.querySelectorAll('th'));
                 const originalRows = Array.from(table.querySelectorAll('tr')).slice(1);
                 let currentSearchTerm = '';
-                
+
                 // 存储所有选项的原始数据
                 const originalOptions = {{}};
-                
+
                 headers.forEach((header, index) => {{
                     if (['省份', '城市', '区县', '年级'].includes(header.textContent)) {{
                         const values = new Set();
                         Array.from(table.querySelectorAll(`td:nth-child(${{index + 1}})`))
                             .forEach(cell => values.add(cell.textContent.trim()));
-                        
+
                         originalOptions[header.textContent] = Array.from(values).sort();
 
                         const filterGroup = document.createElement('div');
                         filterGroup.className = 'filter-group';
-                        
+
                         const select = document.createElement('select');
                         select.className = 'filter-select';
                         select.innerHTML = `
                             <option value="">筛选${{header.textContent}}</option>
-                            ${{originalOptions[header.textContent].map(value => 
+                            ${{originalOptions[header.textContent].map(value =>
                                 `<option value="${{value}}">${{value}}</option>`
                             ).join('')}}
                         `;
-                        
+
                         select.addEventListener('change', () => {{
                             applyFiltersAndSearch();
                         }});
-                        
+
                         filterGroup.appendChild(select);
                         filterContainer.appendChild(filterGroup);
                     }}
@@ -391,7 +399,7 @@ def fetch_and_convert():
                 // 搜索函数
                 function searchRows(rows, term) {{
                     if (!term) return rows;
-                    
+
                     return rows.filter(row => {{
                         const cells = Array.from(row.querySelectorAll('td'));
                         const rowText = cells.map(cell => cell.textContent.toLowerCase()).join(' ');
@@ -436,7 +444,7 @@ def fetch_and_convert():
                         cells.forEach(cell => {{
                             const text = cell.textContent;
                             const regex = new RegExp(term, 'gi');
-                            cell.innerHTML = text.replace(regex, match => 
+                            cell.innerHTML = text.replace(regex, match =>
                                 `<span class="highlight">${{match}}</span>`
                             );
                         }});
@@ -447,10 +455,10 @@ def fetch_and_convert():
                 function updateTableDisplay(visibleRows) {{
                     // 隐藏所有行
                     originalRows.forEach(row => row.classList.add('hidden'));
-                    
+
                     // 显示可见行
                     visibleRows.forEach(row => row.classList.remove('hidden'));
-                    
+
                     // 更新统计
                     updateFilteredStats();
                 }}
@@ -459,13 +467,13 @@ def fetch_and_convert():
                 function applyFiltersAndSearch() {{
                     // 第一步：应用搜索
                     let visibleRows = searchRows(originalRows, currentSearchTerm);
-                    
+
                     // 第二步：应用筛选
                     visibleRows = filterRows(visibleRows);
-                    
+
                     // 第三步：更新显示
                     updateTableDisplay(visibleRows);
-                    
+
                     // 第四步：高亮搜索词
                     highlightSearchTerm(visibleRows, currentSearchTerm);
                 }}
@@ -502,116 +510,22 @@ def fetch_and_convert():
                     return {{
                         totalSchools: rows.length,
                         avgHours: Math.round(rows.reduce((sum, row) => {{
-                            const hours = parseFloat(row.cells[6].textContent || '0');
+                            const hours = parseFloat(row.cells[6].textContent || '0'); // index 6 is 'class_hour_daily' which is used to calculate weekly hours
                             return isNaN(hours) ? sum : sum + hours;
                         }}, 0) / rows.length || 0),
                         totalSuicides: rows.reduce((sum, row) => {{
-                            const suicides = row.cells[9].textContent.trim();
+                            const suicides = row.cells[9].textContent.trim(); // index 9 is 'suicides_number_24'
                             const num = parseInt(suicides);
                             return isNaN(num) ? sum : sum + num;
                         }}, 0),
                         earlyStart: rows.filter(row => {{
-                            const startTime = row.cells[10].textContent;
-                            return startTime && (startTime.includes('05:') || startTime.includes('06:'));
+                            const startTime = row.cells[11].textContent; // index 11 is 'start_time'
+                            return startTime && (startTime.includes('上午05:') || startTime.includes('上午06:') || startTime.includes('上午07:'));
                         }}).length
                     }};
                 }}
 
                 // 初始化总体统计
-                function initTotalStats() {{
-                    const totalStats = calculateStats(originalRows);
-                    totalStatsContainer.innerHTML = createStatsHtml(totalStats, false);
-                }}
-
-                // 更新筛选后的统计
-                function updateFilteredStats() {{
-                    const visibleRows = Array.from(table.querySelectorAll('tr:not(.hidden)')).slice(1);
-                    const filteredStats = calculateStats(visibleRows);
-                    filteredStatsContainer.innerHTML = createStatsHtml(filteredStats, true);
-                }}
-
-                // 为移动端添加数据标签
-                function addMobileDataLabels() {{
-                    const rows = Array.from(table.querySelectorAll('tr'));
-                    const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent);
-                    
-                    rows.slice(1).forEach(row => {{
-                        Array.from(row.cells).forEach((cell, index) => {{
-                            cell.setAttribute('data-label', headers[index]);
-                        }});
-                    }});
-                }}
-
-                // 为移动端添加展开/收起功能
-                function addExpandButtons() {{
-                    const rows = Array.from(table.querySelectorAll('tr')).slice(1);
-                    rows.forEach(row => {{
-                        // 创建展开按钮
-                        const expandBtn = document.createElement('button');
-                        expandBtn.className = 'expand-btn';
-                        expandBtn.textContent = '展开详情';
-                        expandBtn.onclick = function(e) {{
-                            e.stopPropagation();
-                            const isExpanded = row.classList.toggle('expanded');
-                            this.textContent = isExpanded ? '收起' : '展开详情';
-                        }};
-                        
-                        // 添加按钮到行
-                        if (!row.querySelector('.expand-btn')) {{
-                            row.appendChild(expandBtn);
-                        }}
-                        
-                        // 添加行点击事件
-                        row.style.cursor = 'pointer';
-                        row.onclick = function() {{
-                            const isExpanded = this.classList.toggle('expanded');
-                            const btn = this.querySelector('.expand-btn');
-                            if (btn) {{
-                                btn.textContent = isExpanded ? '收起' : '展开详情';
-                            }}
-                        }};
-                    }});
-                }}
-
-                // 添加表格排序功能
-                function initTableSort() {{
-                    const headers = Array.from(table.querySelectorAll('th'));
-                    headers.forEach((header, index) => {{
-                        if (['每周在校学习小时数', '每月假期天数', '寒假放假天数', '24年学生自杀数'].includes(header.textContent)) {{
-                            header.classList.add('sortable');
-                            header.addEventListener('click', () => sortTable(index, header));
-                        }}
-                    }});
-                }}
-
-                function sortTable(columnIndex, header) {{
-                    const tbody = table.querySelector('tbody');
-                    const rows = Array.from(tbody.querySelectorAll('tr'));
-                    const isAsc = !header.classList.contains('asc');
-                    
-                    // 清除所有排序标记
-                    table.querySelectorAll('.sortable').forEach(h => {{
-                        h.classList.remove('asc', 'desc');
-                    }});
-                    
-                    // 添加新的排序标记
-                    header.classList.add(isAsc ? 'asc' : 'desc');
-                    
-                    const sortedRows = rows.sort((a, b) => {{
-                        const aValue = parseFloat(a.cells[columnIndex].textContent) || 0;
-                        const bValue = parseFloat(b.cells[columnIndex].textContent) || 0;
-                        return isAsc ? aValue - bValue : bValue - aValue;
-                    }});
-                    
-                    // 重新插入排序后的行
-                    tbody.innerHTML = '';
-                    sortedRows.forEach(row => tbody.appendChild(row));
-                    
-                    // 更新统计数据
-                    updateFilteredStats();
-                }}
-
-                // 初始化
                 initTotalStats();
                 addExpandButtons();
                 addMobileDataLabels();
@@ -621,10 +535,10 @@ def fetch_and_convert():
     </body>
     </html>
     """
-    
+
     # Save to index.html
     with open('index.html', 'w', encoding='utf-8') as f:
         f.write(html_content)
 
 if __name__ == '__main__':
-    fetch_and_convert() 
+    fetch_and_convert()
