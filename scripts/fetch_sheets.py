@@ -1,3 +1,5 @@
+--- START OF FILE fetch_sheets.py ---
+
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
@@ -25,8 +27,11 @@ def fetch_and_convert():
     header_string = "填写时间\t省份\t城市\t区县\t学校名称\t年级\t每周在校学习小时数\t每月假期天数\t寒假放假天数\t24年学生自杀数\t上学时间\t放学时间 含晚自习\t寒假补课收费总价格\t学生的评论"
     header_columns = header_string.split('\t')
 
+    # Truncate data_rows to match the number of header columns
+    truncated_data_rows = [row[:len(header_columns)] for row in data_rows]
+
     # Convert to pandas DataFrame
-    df = pd.DataFrame(data_rows, columns=header_columns)
+    df = pd.DataFrame(truncated_data_rows, columns=header_columns)
 
     # Get current time in UTC+8
     china_tz = pytz.timezone('Asia/Shanghai')
